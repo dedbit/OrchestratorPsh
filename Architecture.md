@@ -15,8 +15,6 @@ PowerShell-Based System Architecture for Package Management
     - Supports multiple authentication methods for artifact feeds.
     - Logs version check results and update attempts for auditing and troubleshooting.
 
-
-
 #### 2. **Worker Components**
 
 - **Responsibilities**:
