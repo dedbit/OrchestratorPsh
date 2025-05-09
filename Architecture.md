@@ -37,13 +37,8 @@ PowerShell-Based System Architecture for Package Management
 #### 4. **Integration Points**
 
 - **Artifact Feed API Integration**: Supports APIs like Azure DevOps and NuGet for fetching packages.
-- **System Update Service Hooks**: Integrates with system services to manage updates.
-- **Monitoring and Alerting Systems**: Provides hooks for centralized monitoring and alerting.
-- **Centralized Logging Infrastructure**: Logs all activities for centralized analysis.
 
 #### 5. **Deployment Considerations**
 
 - Minimal system impact during updates to ensure uninterrupted operations.
-- Configurable maintenance windows for controlled updates.
-- Network bandwidth management to avoid disruptions.
 - Disaster recovery procedures to handle failures effectively.
