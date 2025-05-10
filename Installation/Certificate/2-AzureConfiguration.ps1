@@ -6,6 +6,9 @@
 # - Azure CLI installed (for alternative commands)
 
 # Parameters - customize these values
+$configPath = "..\..\environments\dev.json" # Adjust the path as needed
+$config = Get-Content -Path $configPath | ConvertFrom-Json
+
 $appName = "OrchestratorPsh"
 $certName = "OrchestratorPshKv"
 $certPassword = "" # See KeePass OrchestratorPshCertPassword

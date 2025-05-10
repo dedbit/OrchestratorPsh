@@ -17,9 +17,12 @@ You can create a self-signed certificate for development/testing or use a certif
 
 ```powershell
 # Define certificate parameters
+$configPath = "..\..\environments\dev.json" # Adjust the path as needed
+$config = Get-Content -Path $configPath | ConvertFrom-Json
+
 $certName = "OrchestratorPshKv"
 $certPassword = ConvertTo-SecureString -String "" -Force -AsPlainText # See KeePass OrchestratorPshCertPassword
-$certPath = ".\$certName.pfx"
+$certPath = ".\$($config.certName)$.pfx"
 $certThumbprint = $null
 
 # Create self-signed certificate valid for 2 years
@@ -42,50 +45,7 @@ Export-Certificate -Cert "Cert:\CurrentUser\My\$certThumbprint" -FilePath ".\$ce
 Write-Host "Certificate created with thumbprint: $certThumbprint"
 ```
 
-## Step 2: Register an App in Azure AD
 
-1. Sign in to the Azure portal
-2. Navigate to **Microsoft Entra ID** > **App registrations** > **New registration**
-3. Enter a name for your application
-4. Select supported account types (typically "Accounts in this organizational directory only")
-5. Click **Register**
-6. Note the **Application (client) ID** and **Directory (tenant) ID** for later
-
-## Step 3: Upload Certificate to App Registration
-
-1. In your App Registration, go to **Certificates & secrets**
-2. Select the **Certificates** tab
-3. Click **Upload certificate**
-4. Upload the .cer file created earlier
-5. Add a description and click **Add**
-
-## Step 4: Create an Azure Key Vault
-
-1. In Azure portal, navigate to **Key Vaults**
-2. Click **+ Create**
-3. Fill in the required information:
-   - Subscription
-   - Resource group
-   - Key vault name
-   - Region
-   - Pricing tier
-4. Configure access and networking settings as needed
-5. Click **Review + create**, then **Create**
-
-## Step 5: Set Key Vault Access Policies
-
-1. Navigate to your Key Vault
-2. Select **Access policies** under Settings
-3. Click **+ Add Access Policy**
-4. Configure permissions:
-   - Secret permissions: Select needed (Get, List, etc.)
-   - Certificate permissions: Select needed
-   - Key permissions: Select needed
-5. For Principal, search for and select your registered application name
-6. Click **Add**
-7. Click **Save** to apply changes
-
-## Step 6: Configure Your Application to Use Certificate Authentication
 
 ### PowerShell Example
 
