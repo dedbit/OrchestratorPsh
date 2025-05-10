@@ -9,11 +9,11 @@
 $configPath = "..\..\environments\dev.json" # Adjust the path as needed
 $config = Get-Content -Path $configPath | ConvertFrom-Json
 
-$appName = "OrchestratorPsh"
-$certName = "OrchestratorPshKv"
-$certPassword = "" # See KeePass OrchestratorPshCertPassword
-$expiryYears = 1
-$subscriptionId = "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3" # Replace with your Azure subscription ID
+# Request password input from the user
+$certPassword = Read-Host -Prompt "Enter certificate password" 
+
+# Use the password in subsequent operations
+$securePassword = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
 
 # Step 1: Sign in to Azure
 
@@ -22,17 +22,16 @@ $subscriptionId = "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3" # Replace with your Azu
 Write-Host "Creating self-signed certificate..." -ForegroundColor Green
 
 # Define certificate parameters
-$securePassword = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
-$certPath = ".\$certName.pfx"
-$certCerPath = ".\$certName.cer"
+$certPath = ".\$($config.CertName).pfx"
+$certCerPath = ".\$($config.CertName).cer"
 $certThumbprint = $null
 
 
 # Create self-signed certificate
 $cert = New-SelfSignedCertificate -CertStoreLocation Cert:\CurrentUser\My `
-    -Subject "CN=$certName" `
+    -Subject "CN=$($config.CertName)" `
     -KeySpec Signature `
-    -NotAfter (Get-Date).AddYears($expiryYears) `
+    -NotAfter (Get-Date).AddYears($($config.expiryYears)) `
     -KeyExportPolicy Exportable `
     -KeyAlgorithm RSA `
     -KeyLength 2048
@@ -53,12 +52,12 @@ Write-Host "Creating Azure AD app registration..." -ForegroundColor Green
 
 # Get current context for tenant ID
 Connect-AzAccount
-Set-AzContext -SubscriptionId $subscriptionId
+Set-AzContext -SubscriptionId $($config.SubscriptionId)
 $context = Get-AzContext
 $tenantId = $context.Tenant.Id
 
 # Create the Azure AD application
-$app = New-AzADApplication -DisplayName $appName
+$app = New-AzADApplication -DisplayName $($config.AppName)
 $clientId = $app.AppId
 Write-Host "Azure AD application created with client ID: $clientId" -ForegroundColor Green
 
@@ -77,7 +76,7 @@ $certData = [System.Convert]::ToBase64String(([System.IO.File]::ReadAllBytes((ls
 try {
     # Ensure StartDate and EndDate are properly set
     $startDate = (Get-Date).ToUniversalTime()
-    $endDate = $startDate.AddYears($expiryYears).ToUniversalTime()
+    $endDate = $startDate.AddYears($($config.expiryYears)).ToUniversalTime()
 
     if ($endDate -le $startDate) {
         throw "EndDate must be later than StartDate."
@@ -119,7 +118,7 @@ Write-Host "Access policy set for the service principal on Key Vault" -Foregroun
 
 # Summary
 Write-Host "`n======== SETUP COMPLETE ========" -ForegroundColor Green
-Write-Host "App Name: $appName" -ForegroundColor Cyan
+Write-Host "App Name: $($config.AppName)" -ForegroundColor Cyan
 Write-Host "Client ID: $clientId" -ForegroundColor Cyan
 Write-Host "Tenant ID: $tenantId" -ForegroundColor Cyan
 Write-Host "Certificate Thumbprint: $certThumbprint" -ForegroundColor Cyan
