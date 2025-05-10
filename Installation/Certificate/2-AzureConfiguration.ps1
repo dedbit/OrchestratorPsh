@@ -5,27 +5,24 @@
 # - Az PowerShell module installed (Install-Module -Name Az)
 # - Azure CLI installed (for alternative commands)
 
+# Moved variable declarations to the top of the script for better organization
+
 # Parameters - customize these values
 $configPath = "..\..\environments\dev.json" # Adjust the path as needed
 $config = Get-Content -Path $configPath | ConvertFrom-Json
 
-# Request password input from the user
 $certPassword = Read-Host -Prompt "Enter certificate password" 
-
-# Use the password in subsequent operations
 $securePassword = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
 
-# Step 1: Sign in to Azure
-
-
-# Step 2: Create a self-signed certificate
-Write-Host "Creating self-signed certificate..." -ForegroundColor Green
-
-# Define certificate parameters
 $certPath = ".\$($config.CertName).pfx"
 $certCerPath = ".\$($config.CertName).cer"
 $certThumbprint = $null
 
+# Step 1: Sign in to Azure
+Connect-AzAccount
+
+# Step 2: Create a self-signed certificate
+Write-Host "Creating self-signed certificate..." -ForegroundColor Green
 
 # Create self-signed certificate
 $cert = New-SelfSignedCertificate -CertStoreLocation Cert:\CurrentUser\My `
@@ -51,7 +48,6 @@ Write-Host "Certificate thumbprint: $certThumbprint" -ForegroundColor Yellow
 Write-Host "Creating Azure AD app registration..." -ForegroundColor Green
 
 # Get current context for tenant ID
-Connect-AzAccount
 Set-AzContext -SubscriptionId $($config.SubscriptionId)
 $context = Get-AzContext
 $tenantId = $context.Tenant.Id
@@ -69,7 +65,6 @@ Write-Host "Service principal created with object ID: $($sp.Id)" -ForegroundColo
 Write-Host "Uploading certificate to app registration..." -ForegroundColor Green
 
 # Read the .cer file content
-# $certData = [System.Convert]::ToBase64String(([System.IO.File]::ReadAllBytes($certCerPath)))
 $certData = [System.Convert]::ToBase64String(([System.IO.File]::ReadAllBytes((ls $certCerPath).FullName)))
 
 # Add error handling and ensure proper date validation for certificate upload
@@ -88,33 +83,20 @@ try {
         -StartDate $startDate `
         -EndDate $endDate
 
-    
-    #$keyCredential = Get-AzADAppCredential -ApplicationId $clientId
-
     Write-Host "Certificate uploaded successfully to app registration" -ForegroundColor Green
 } catch {
     Write-Host "An error occurred while uploading the certificate: $_" -ForegroundColor Red
     throw
 }
 
-
 # ASSIGN PERMISSIONS
 
 # Step 5: Provide access to the app to secrets in Azure Key Vault
 Write-Host "Providing access to the app for secrets in Azure Key Vault..." -ForegroundColor Green
 
-# Define Key Vault name and resource group
-$keyVaultName = "orchestrator2psh-kv" # Replace with your Key Vault name
-$resourceGroupName = "orchestratorPsh-dev-rg" # Replace with your Resource Group name
-
 # Set access policy for the service principal
-
-Set-AzKeyVaultAccessPolicy -VaultName $keyVaultName -ResourceGroupName $resourceGroupName -ServicePrincipalName $clientId -PermissionsToSecrets get,list
+Set-AzKeyVaultAccessPolicy -VaultName $($config.KeyVaultName) -ResourceGroupName $($config.ResourceGroupName) -ServicePrincipalName $clientId -PermissionsToSecrets get,list
 Write-Host "Access policy set for the service principal on Key Vault" -ForegroundColor Green
-
-
-
-
 
 # Summary
 Write-Host "`n======== SETUP COMPLETE ========" -ForegroundColor Green
@@ -140,11 +122,6 @@ Connect-AzAccount -ServicePrincipal -CertificateThumbprint "$certThumbprint" -Ap
 # `$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("$certPath", `$certPassword)
 # Connect-AzAccount -ServicePrincipal -CertificateThumbprint `$cert.Thumbprint -ApplicationId "$clientId" -TenantId "$tenantId"
 "@ -ForegroundColor Magenta
-
-
-
-
-##
 
 
 
