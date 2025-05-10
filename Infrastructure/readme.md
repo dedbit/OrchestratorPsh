@@ -28,16 +28,20 @@ $env:TF_LOG = "DEBUG"
 
 # For state create account initial setup:
 az group create --name orchestratorPsh-state-dev-rg --location "West Europe"
-az storage account create --name orchestratorpshstatedevsa --resource-group orchestratorPsh-state-dev-rg --location "West Europe" --sku Standard_LRS
-az storage container create --name tfstate --account-name orchestratorpshstatedevsa
+az storage account create --name orchestratorpshstatesa --resource-group orchestratorPsh-state-dev-rg --location "West Europe" --sku Standard_LRS
+az storage container create --name tfstate --account-name orchestratorpshstatesa
+
 
 ```
 
 Run the following command in the terminal to initialize Terraform and download the Azure provider:
 
-```
+```Powershell
+new-alias tf terraform
 terraform init
-terraform refresh
+
+# Only run refresh if nothing else works. Use Init instead. 
+# terraform refresh
 ```
 
 
@@ -50,6 +54,13 @@ terraform import azurerm_key_vault_secret https://orchestrator-kv.vault.azure.ne
 Run the following command to see what Terraform will create:
 
 ```
+# Help: terraform plan -help
+
+terraform validate
+terraform plan -out plan.tfplan
+terraform apply plan.tfplan 
+
+
 terraform plan
 ```
 
@@ -62,7 +73,6 @@ Run the following command to create the resources in Azure:
 ```
 terraform apply -auto-approve
 ```
-
 When prompted, type `yes` to confirm the changes.
 
 ```

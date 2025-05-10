@@ -1,0 +1,5 @@
+LICENSE.txt
+*.exe
+*.hcl
+*.tfstate
+*.tfplan

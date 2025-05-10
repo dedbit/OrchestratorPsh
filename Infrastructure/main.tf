@@ -1,7 +1,7 @@
 terraform {
   backend "azurerm" {
     resource_group_name  = "orchestratorPsh-state-dev-rg"  # Match the resource group from state.tf
-    storage_account_name = "orchestratorpshstatedevsa"    # Match the storage account name from state.tf
+    storage_account_name = "orchestratorpshstatesa"    # Match the storage account name from state.tf
     container_name       = "tfstate"                  # Match the container name from state.tf
     key                  = "terraform.tfstate"        # Specify the state file name
   }
@@ -32,7 +32,7 @@ variable "config" {
     tenant_id       = "6df08080-a31a-4efa-8c05-2373fc4515fc"
     subscription_id = "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3"
   }
-}
+} 
 
 # Configure the Azure provider
 provider "azurerm" {
@@ -109,8 +109,6 @@ resource "azurerm_key_vault_access_policy" "example" {
 
 output "deployment_outputs" {
   value = {
-    function_app_hostname = azurerm_linux_function_app.example.default_hostname
-    function_app_name     = azurerm_linux_function_app.example.name
     resource_group_name   = var.config.resource_names.resource_group_name
     subscription_id       = var.config.subscription_id
     key_vault_name        = var.config.resource_names.key_vault_name
