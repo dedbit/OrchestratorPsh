@@ -16,6 +16,8 @@ $PackageName = "YourPackageName"  # Replace with the actual package name to moni
 $ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $LogFilePath = Join-Path -Path $ScriptDirectory -ChildPath "PackageUpdater.log"
 
+
+
 # Function to log messages
 function Log-Message {
     param (
