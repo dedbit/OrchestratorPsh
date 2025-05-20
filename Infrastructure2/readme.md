@@ -65,11 +65,16 @@ Get-AzKeyVault -ResourceGroupName orchestratorPsh2-dev-rg -VaultName "orchestrat
 
 ### 5. **Clean Up Resources**
 
-To delete all resources deployed:
+To delete all resources deployed, including permanent removal of the Key Vault from the soft-delete (recycle bin):
 
 ```powershell
-# Remove the entire resource group
-Remove-AzResourceGroup -Name orchestratorPsh-dev-rg -Force
+# Run the termination script which:
+# 1. Deletes the resource group and all resources
+# 2. Purges the Key Vault from soft-delete (recycle bin)
+./Terminate.ps1
+
+# Specify custom resource group or key vault name
+./Terminate.ps1 -ResourceGroupName "custom-rg-name" -KeyVaultName "custom-kv-name"
 ```
 
 ## Importing Existing Resources

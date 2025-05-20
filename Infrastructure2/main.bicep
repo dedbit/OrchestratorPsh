@@ -1,5 +1,5 @@
 // main.bicep - Equivalent to main.tf
-targetScope = 'resourceGroup'
+targetScope = 'subscription'
 
 // Define parameters equivalent to variables in the Terraform file
 param githubRepoUrl string = ''
@@ -16,79 +16,27 @@ param location string = 'West Europe'
 // Object ID for Key Vault access policies
 param objectId string
 
-// Define KeyVault
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: keyVaultName
+// Define Resource Group with tag - this places the GitHub repo tag on the resource group
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+  name: resourceGroupName
   location: location
-  properties: {
-    tenantId: tenantId
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    accessPolicies: [
-      {
-        tenantId: tenantId
-        objectId: objectId // This will be passed from the deployment script
-        permissions: {
-          secrets: [
-            'get'
-            'list'
-            'set'
-            'delete'
-          ]
-        }
-      }
-    ]
-    networkAcls: {
-      defaultAction: 'Deny'
-      bypass: 'AzureServices'
-      ipRules: [
-        {
-          value: '185.162.105.4'
-        }
-        {
-          value: '87.63.79.239'
-        }
-      ]
-    }  }
   tags: {
     GitHubRepo: githubRepoUrl
   }
 }
 
-// Define KeyVault Secret
-resource patSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'PAT'
-  properties: {
-    value: ''
-  }
-}
-
-// Access Policy for the key vault
-// Note: In Bicep, additional access policies can be added directly to the keyVault resource
-resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
-  parent: keyVault
-  name: 'add'
-  properties: {
-    accessPolicies: [
-      {
-        tenantId: tenantId
-        objectId: objectId // Using the parameter passed from deployment script
-        permissions: {
-          secrets: [
-            'get'
-            'list'
-            'set'
-            'delete'
-            'recover'
-            'backup'
-            'restore'
-          ]
-        }
-      }
-    ]
+// Deploy Key Vault resources using a module
+// This module contains the KeyVault, KeyVault Secret, and Access Policies
+// We use a module because these resources need to be deployed at resource group scope
+// while the resource group itself needs to be deployed at subscription scope
+module keyVaultModule 'keyVault.bicep' = {
+  name: 'keyVaultDeployment'
+  scope: rg
+  params: {
+    keyVaultName: keyVaultName
+    location: location
+    tenantId: tenantId
+    objectId: objectId
   }
 }
 
@@ -96,5 +44,6 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-
 output deploymentOutputs object = {
   resourceGroupName: resourceGroupName
   subscriptionId: subscriptionId
-  keyVaultName: keyVaultName
+  keyVaultName: keyVaultModule.outputs.keyVaultName
 }
+

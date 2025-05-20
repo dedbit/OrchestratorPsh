@@ -25,33 +25,24 @@ $parameterContent.parameters.githubRepoUrl.value = $env:GITHUB_REPO_URL
 $parameterContent | ConvertTo-Json -Depth 10 | Set-Content -Path $parameterFilePath
 
 # Set deployment values
-$resourceGroupName = "orchestratorPsh2-dev-rg"
 $location = "West Europe"
+$deploymentName = "orchestratorPsh-deployment-$(Get-Date -Format 'yyyyMMddHHmmss')"
 
-# Check if resource group exists, if not create it
-$rgExists = Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
-if (-not $rgExists) {
-    New-AzResourceGroup -Name $resourceGroupName -Location $location
-    Write-Host "Resource group '$resourceGroupName' created."
-}
-else {
-    Write-Host "Resource group '$resourceGroupName' already exists."
-}
-
-# Deploy the Bicep template
-Write-Host "Deploying Bicep template..."
-New-AzResourceGroupDeployment `
-    -ResourceGroupName $resourceGroupName `
+# Deploy the Bicep template at subscription level
+Write-Host "Deploying Bicep template at subscription level..."
+New-AzSubscriptionDeployment `
+    -Name $deploymentName `
+    -Location $location `
     -TemplateFile "main.bicep" `
     -TemplateParameterFile $parameterFilePath `
     -githubRepoUrl $env:GITHUB_REPO_URL `
-    -Mode Incremental `
     -Verbose
 
 # Get and display the deployment outputs
-$deploymentOutputs = Get-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName | Where-Object { $_.DeploymentName -like "main-*" } | Select-Object -First 1 -ExpandProperty Outputs
-
-Write-Host -ForegroundColor Magenta "Outputs: "
-$deploymentOutputs | Out-Host
+$subscriptionDeployment = Get-AzSubscriptionDeployment -Name $deploymentName -ErrorAction SilentlyContinue
+if ($subscriptionDeployment) {
+    Write-Host -ForegroundColor Magenta "Outputs: "
+    $subscriptionDeployment.Outputs | Out-Host
+}
 
 Write-Host "Deployment completed."
