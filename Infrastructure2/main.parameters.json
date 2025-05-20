@@ -12,10 +12,10 @@
       "value": "default_value"
     },
     "resourceGroupName": {
-      "value": "orchestratorPsh-dev-rg"
+      "value": "orchestratorPsh2-dev-rg"
     },
     "keyVaultName": {
-      "value": "orchestrator2psh-kv"
+      "value": "orchestrator2psh2-kv"
     },
     "tenantId": {
       "value": "6df08080-a31a-4efa-8c05-2373fc4515fc"
@@ -25,8 +25,9 @@
     },
     "location": {
       "value": "West Europe"
-    },    "objectId": {
-      "value": ""
+    },
+    "objectId": {
+      "value": "b797b210-773e-4be2-b19b-d23738f920f0"
     }
   }
 }

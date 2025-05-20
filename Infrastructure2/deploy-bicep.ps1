@@ -12,7 +12,7 @@ $parameterContent.parameters.objectId.value = $currentObjectId
 $parameterContent | ConvertTo-Json -Depth 10 | Set-Content -Path $parameterFilePath
 
 # Set deployment values
-$resourceGroupName = "orchestratorPsh-dev-rg"
+$resourceGroupName = "orchestratorPsh2-dev-rg"
 $location = "West Europe"
 
 # Check if resource group exists, if not create it

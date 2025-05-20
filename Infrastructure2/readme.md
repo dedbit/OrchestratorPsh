@@ -1,6 +1,6 @@
 # Azure Infrastructure deployed using Bicep
 
-This folder contains Bicep templates and deployment scripts for provisioning Azure resources. Bicep is a domain-specific language (DSL) that uses declarative syntax to deploy Azure resources. This deployment uses PowerShell Az module to deploy the Bicep templates.
+This folder contains Bicep templates and deployment scripts for provisioning Azure resources. 
 
 ## Prerequisites
 
@@ -54,7 +54,7 @@ If you prefer manual deployment, you can use PowerShell commands directly:
 cd Infrastructure2
 
 # Create resource group if it doesn't exist
-$resourceGroupName = "orchestratorPsh-dev-rg"
+$resourceGroupName = "orchestratorPsh2-dev-rg"
 $location = "West Europe"
 
 $rgExists = Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
