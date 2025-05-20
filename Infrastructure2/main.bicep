@@ -3,8 +3,6 @@ targetScope = 'resourceGroup'
 
 // Define parameters equivalent to variables in the Terraform file
 param githubRepoUrl string = ''
-param anotherVariable string = 'default_value'
-param yetAnotherVariable string = 'default_value'
 
 // Resource names, tenant ID, and subscription ID
 param resourceGroupName string = 'orchestratorPsh-dev-rg'
@@ -53,11 +51,9 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
           value: '87.63.79.239'
         }
       ]
-    }
-  }
+    }  }
   tags: {
     GitHubRepo: githubRepoUrl
-    AnotherTag: anotherVariable
   }
 }
 

@@ -37,49 +37,19 @@ $context = Get-AzContext
 
 Run the PowerShell deployment script which handles:
 - Getting the current user's Object ID
+- Getting GitHub repo URL from git configuration
 - Updating the parameter file
 - Creating the resource group if needed
 - Deploying the Bicep template
 
 ```powershell
+# Basic usage - gets GitHub repo URL from git configuration
 ./deploy-bicep.ps1
+
+# Override the GitHub repo URL parameter when calling the script
+./deploy-bicep.ps1 -GithubRepoUrl "https://github.com/myorg/myrepo"
 ```
 
-#### Option 2: Manual Deployment
-
-If you prefer manual deployment, you can use PowerShell commands directly:
-
-```powershell
-# Make sure you are in the Infrastructure2 directory
-cd Infrastructure2
-
-# Create resource group if it doesn't exist
-$resourceGroupName = "orchestratorPsh2-dev-rg"
-$location = "West Europe"
-
-$rgExists = Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
-if (-not $rgExists) {
-    New-AzResourceGroup -Name $resourceGroupName -Location $location
-    Write-Host "Resource group '$resourceGroupName' created."
-}
-
-# Get the current user's Object ID for Key Vault access
-$currentUser = Get-AzADUser -SignedIn
-$currentObjectId = $currentUser.Id
-
-# Update the parameter file with the current user's object ID
-$parameterFilePath = "main.parameters.json"
-$parameterContent = Get-Content -Path $parameterFilePath -Raw | ConvertFrom-Json
-$parameterContent.parameters.objectId.value = $currentObjectId
-$parameterContent | ConvertTo-Json -Depth 10 | Set-Content -Path $parameterFilePath
-
-# Deploy the Bicep template with parameters
-New-AzResourceGroupDeployment `
-    -ResourceGroupName $resourceGroupName `
-    -TemplateFile "main.bicep" `
-    -TemplateParameterFile $parameterFilePath `
-    -Mode Incremental
-```
 
 ### 4. **Verify Deployment**
 
@@ -87,10 +57,10 @@ After deployment, verify that resources were created correctly:
 
 ```powershell
 # List resources in the resource group
-Get-AzResource -ResourceGroupName orchestratorPsh-dev-rg
+Get-AzResource -ResourceGroupName orchestratorPsh2-dev-rg
 
 # Get details about a specific resource (e.g., Key Vault)
-Get-AzKeyVault -ResourceGroupName orchestratorPsh-dev-rg -VaultName "orchestrator2psh-kv"
+Get-AzKeyVault -ResourceGroupName orchestratorPsh2-dev-rg -VaultName "orchestrator2psh2-kv"
 ```
 
 ### 5. **Clean Up Resources**
@@ -114,12 +84,32 @@ Export-AzResourceGroup -ResourceGroupName orchestratorPsh-dev-rg -Path ./exporte
 bicep decompile ./exported.json
 ```
 
+## Dynamic Parameter Handling
+
+The deployment script supports several methods for parameter values:
+
+1. **Script Parameters**: Pass values directly when calling the script:
+   ```powershell
+   ./deploy-bicep.ps1 -GithubRepoUrl "https://github.com/myorg/myrepo"
+   ```
+
+2. **Git Repository URL**: If not explicitly provided, the script will attempt to get the GitHub repository URL from git configuration:
+   ```powershell
+   # This is executed in the script when no GithubRepoUrl is provided
+   $repoUrl = git config --get remote.origin.url
+   ```
+
+3. **Parameters File**: The script updates the `main.parameters.json` file with the values from script parameters or git configuration.
+
+4. **Override at Deployment**: Parameters are passed both through the parameters file and directly to the deployment command to ensure they take precedence.
+
 ## Notes
 
 - The Bicep template creates a Key Vault with network rules and access policies
 - Access policies are set for the current user based on the Object ID provided during deployment
 - The template includes a secret named "PAT" in the Key Vault
 - The deployment script handles obtaining the current user's Object ID and updating the parameters file
+- GitHub repository URL is automatically detected from git configuration if not provided explicitly
 
 ## Troubleshooting
 
