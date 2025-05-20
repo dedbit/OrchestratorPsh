@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "githubRepoUrl": {
+      "value": ""
+    },
+    "anotherVariable": {
+      "value": "default_value"
+    },
+    "yetAnotherVariable": {
+      "value": "default_value"
+    },
+    "resourceGroupName": {
+      "value": "orchestratorPsh-dev-rg"
+    },
+    "keyVaultName": {
+      "value": "orchestrator2psh-kv"
+    },
+    "tenantId": {
+      "value": "6df08080-a31a-4efa-8c05-2373fc4515fc"
+    },
+    "subscriptionId": {
+      "value": "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3"
+    },
+    "location": {
+      "value": "West Europe"
+    },    "objectId": {
+      "value": ""
+    }
+  }
+}
