@@ -17,11 +17,33 @@ Write-Host "Using GitHub repo URL: $env:GITHUB_REPO_URL"
 $currentUser = Get-AzADUser -SignedIn
 $currentObjectId = $currentUser.Id
 
-# Update the Bicep parameter file with current user's object ID and GitHub repo URL
+# Load environment configuration for tenant and subscription IDs
+$envConfigPath = "..\environments\dev.json"
+$tenantId = ""
+$subscriptionId = ""
+
+if (Test-Path $envConfigPath) {
+    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
+    $tenantId = $envConfig.tenantId
+    $subscriptionId = $envConfig.subscriptionId
+} else {
+    Write-Warning "Could not find environment config at $envConfigPath. Will continue without tenant and subscription IDs."
+}
+
+# Update the Bicep parameter file with current user's object ID, GitHub repo URL, and IDs from environment config
 $parameterFilePath = "main.parameters.json"
 $parameterContent = Get-Content -Path $parameterFilePath -Raw | ConvertFrom-Json
 $parameterContent.parameters.objectId.value = $currentObjectId
 $parameterContent.parameters.githubRepoUrl.value = $env:GITHUB_REPO_URL
+
+# Update tenant and subscription IDs from environment config
+if (-not [string]::IsNullOrEmpty($tenantId)) {
+    $parameterContent.parameters.tenantId.value = $tenantId
+}
+if (-not [string]::IsNullOrEmpty($subscriptionId)) {
+    $parameterContent.parameters.subscriptionId.value = $subscriptionId
+}
+
 $parameterContent | ConvertTo-Json -Depth 10 | Set-Content -Path $parameterFilePath
 
 # Set deployment values

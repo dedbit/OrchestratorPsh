@@ -1,8 +1,9 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",  "parameters": {
+  "contentVersion": "1.0.0.0",
+  "parameters": {
     "githubRepoUrl": {
-      "value": ""
+      "value": "https://github.com/dedbit/OrchestratorPsh.git"
     },
     "resourceGroupName": {
       "value": "orchestratorPsh2-dev-rg"

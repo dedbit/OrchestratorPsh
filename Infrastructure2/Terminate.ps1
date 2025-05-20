@@ -10,6 +10,18 @@ param(
 
 # Import required parameters from the parameters file if it exists
 try {
+    # First try to get parameters from environments/dev.json
+    $envConfigPath = "..\environments\dev.json"
+    $tenantId = ""
+    $subscriptionId = ""
+    
+    if (Test-Path $envConfigPath) {
+        $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
+        $tenantId = $envConfig.tenantId
+        $subscriptionId = $envConfig.subscriptionId
+    }
+    
+    # Then get resource group and key vault names from main.parameters.json
     $parameterFilePath = "main.parameters.json"
     if (Test-Path $parameterFilePath) {
         $parameterContent = Get-Content -Path $parameterFilePath -Raw | ConvertFrom-Json
@@ -32,7 +44,12 @@ Write-Host "Starting termination process..." -ForegroundColor Yellow
 $context = Get-AzContext
 if (-not $context) {
     Write-Host "No Azure context found. Please sign in..." -ForegroundColor Cyan
-    Connect-AzAccount -TenantId "6df08080-a31a-4efa-8c05-2373fc4515fc" -SubscriptionId "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3"
+    if ([string]::IsNullOrEmpty($tenantId) -or [string]::IsNullOrEmpty($subscriptionId)) {
+        Write-Host "Could not find tenant ID or subscription ID in configuration files. Please sign in manually." -ForegroundColor Yellow
+        Connect-AzAccount
+    } else {
+        Connect-AzAccount -TenantId $tenantId -SubscriptionId $subscriptionId
+    }
 }
 
 # Check if the resource group exists

@@ -24,8 +24,13 @@ Import-Module Az
 # Navigate to the Infrastructure2 directory
 cd Infrastructure2
 
-# Sign in to Azure with a specific tenant and subscription
-Connect-AzAccount -TenantId "6df08080-a31a-4efa-8c05-2373fc4515fc" -SubscriptionId "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3"
+# Load tenant and subscription IDs from environment configuration
+$envConfig = Get-Content -Path "..\environments\dev.json" -Raw | ConvertFrom-Json
+$tenantId = $envConfig.tenantId
+$subscriptionId = $envConfig.subscriptionId
+
+# Sign in to Azure with tenant and subscription IDs from config
+Connect-AzAccount -TenantId $tenantId -SubscriptionId $subscriptionId
 
 # Verify and store the context for use in scripts
 $context = Get-AzContext
@@ -115,15 +120,17 @@ The deployment script supports several methods for parameter values:
 - The template includes a secret named "PAT" in the Key Vault
 - The deployment script handles obtaining the current user's Object ID and updating the parameters file
 - GitHub repository URL is automatically detected from git configuration if not provided explicitly
+- Tenant ID and Subscription ID are loaded from the `environments/dev.json` file
 
 ## Troubleshooting
 
 If you encounter issues during deployment:
 
-1. Ensure you're signed in to the correct tenant and subscription
+1. Ensure you're signed in to the correct tenant and subscription (configured in `environments/dev.json`)
 2. Check that you have the necessary permissions to create resources
 3. Review any error messages in the output
-4. Enable verbose logging for more detailed information:
+4. Verify that the `environments/dev.json` file contains valid tenantId and subscriptionId values
+5. Enable verbose logging for more detailed information:
 
 ```powershell
 $VerbosePreference = "Continue"

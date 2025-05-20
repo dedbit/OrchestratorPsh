@@ -7,8 +7,8 @@ param githubRepoUrl string = ''
 // Resource names, tenant ID, and subscription ID
 param resourceGroupName string = 'orchestratorPsh-dev-rg'
 param keyVaultName string = 'orchestrator2psh-kv'
-param tenantId string = '6df08080-a31a-4efa-8c05-2373fc4515fc'
-param subscriptionId string = 'd3e92861-7740-4f9f-8cd2-bdfe8dd4bde3'
+param tenantId string
+param subscriptionId string
 
 // Location for the resources
 param location string = 'West Europe'
