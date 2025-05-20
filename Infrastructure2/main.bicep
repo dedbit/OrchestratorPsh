@@ -4,9 +4,9 @@ targetScope = 'subscription'
 // Define parameters equivalent to variables in the Terraform file
 param githubRepoUrl string = ''
 
-// Resource names, tenant ID, and subscription ID
-param resourceGroupName string = 'orchestratorPsh-dev-rg'
-param keyVaultName string = 'orchestrator2psh-kv'
+// Resource names, tenant ID, and subscription ID - now loaded from environments/dev.json
+param resourceGroupName string
+param keyVaultName string
 param tenantId string
 param subscriptionId string
 

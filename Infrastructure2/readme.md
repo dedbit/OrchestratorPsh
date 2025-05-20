@@ -98,29 +98,47 @@ bicep decompile ./exported.json
 
 The deployment script supports several methods for parameter values:
 
-1. **Script Parameters**: Pass values directly when calling the script:
+1. **Environment Configuration**: Key parameters are loaded from `environments/dev.json`:
+   - Tenant ID
+   - Subscription ID
+   - Key Vault Name
+   - Resource Group Name
+
+   ```powershell
+   # Synchronize parameters between environments/dev.json and main.parameters.json
+   ./sync-parameters.ps1
+   ```
+
+2. **Script Parameters**: Pass values directly when calling the script:
    ```powershell
    ./deploy-bicep.ps1 -GithubRepoUrl "https://github.com/myorg/myrepo"
    ```
 
-2. **Git Repository URL**: If not explicitly provided, the script will attempt to get the GitHub repository URL from git configuration:
+3. **Git Repository URL**: If not explicitly provided, the script will attempt to get the GitHub repository URL from git configuration:
    ```powershell
    # This is executed in the script when no GithubRepoUrl is provided
    $repoUrl = git config --get remote.origin.url
    ```
 
-3. **Parameters File**: The script updates the `main.parameters.json` file with the values from script parameters or git configuration.
+4. **Parameters File**: The script updates the `main.parameters.json` file with values from environment config and script parameters before deployment.
 
-4. **Override at Deployment**: Parameters are passed both through the parameters file and directly to the deployment command to ensure they take precedence.
+5. **Override at Deployment**: Parameters are passed both through the parameters file and directly to the deployment command to ensure they take precedence.
 
 ## Notes
 
-- The Bicep template creates a Key Vault with network rules and access policies
-- Access policies are set for the current user based on the Object ID provided during deployment
-- The template includes a secret named "PAT" in the Key Vault
-- The deployment script handles obtaining the current user's Object ID and updating the parameters file
-- GitHub repository URL is automatically detected from git configuration if not provided explicitly
-- Tenant ID and Subscription ID are loaded from the `environments/dev.json` file
+### Configuration and Parameters
+- **Environment Configuration**: Tenant ID, Subscription ID, Key Vault Name, and Resource Group Name are loaded from `environments/dev.json` file
+- **Parameters File**: The deployment script updates `main.parameters.json` automatically with values from environment config
+- **GitHub Repo URL**: Automatically detected from git configuration if not provided explicitly
+- **Object ID**: Obtained from the currently signed-in user for Key Vault access policies
+
+### Resource Features
+- **Key Vault**: Created with network rules (IP-based access restrictions) and access policies 
+- **PAT Secret**: The template includes a secret named "PAT" in the Key Vault
+- **Access Policies**: Set automatically for the current user based on the Object ID
+
+### Synchronization
+- The `sync-parameters.ps1` script ensures consistency between environment config and parameter files
 
 ## Troubleshooting
 

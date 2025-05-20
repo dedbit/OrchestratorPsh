@@ -14,23 +14,39 @@ try {
     $envConfigPath = "..\environments\dev.json"
     $tenantId = ""
     $subscriptionId = ""
+    $envKvName = ""
+    $envRgName = ""
     
     if (Test-Path $envConfigPath) {
         $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
         $tenantId = $envConfig.tenantId
         $subscriptionId = $envConfig.subscriptionId
+        $envKvName = $envConfig.keyVaultName
+        $envRgName = $envConfig.resourceGroupName
+        
+        # Use values from environment config
+        if (-not [string]::IsNullOrEmpty($envKvName)) {
+            $KeyVaultName = $envKvName
+            Write-Host "Using Key Vault Name: $KeyVaultName from environments/dev.json" -ForegroundColor Cyan
+        }
+        if (-not [string]::IsNullOrEmpty($envRgName)) {
+            $ResourceGroupName = $envRgName
+            Write-Host "Using Resource Group Name: $ResourceGroupName from environments/dev.json" -ForegroundColor Cyan
+        }
     }
     
-    # Then get resource group and key vault names from main.parameters.json
+    # Also check main.parameters.json (this will override environment config values if they exist)
     $parameterFilePath = "main.parameters.json"
     if (Test-Path $parameterFilePath) {
         $parameterContent = Get-Content -Path $parameterFilePath -Raw | ConvertFrom-Json
         # Override defaults with values from the parameter file if they exist
         if ($parameterContent.parameters.resourceGroupName) {
             $ResourceGroupName = $parameterContent.parameters.resourceGroupName.value
+            Write-Host "Using Resource Group Name: $ResourceGroupName from main.parameters.json" -ForegroundColor Cyan
         }
         if ($parameterContent.parameters.keyVaultName) {
             $KeyVaultName = $parameterContent.parameters.keyVaultName.value
+            Write-Host "Using Key Vault Name: $KeyVaultName from main.parameters.json" -ForegroundColor Cyan
         }
     }
 }
