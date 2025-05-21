@@ -17,10 +17,19 @@ function Get-PATFromKeyVault {
 }
 
 # Define variables
-$KeyVaultName = "YourKeyVaultName"  # Replace with your Azure Key Vault name
-$SecretName = "YourPATSecretName"   # Replace with the name of the secret storing the PAT
+$envConfigPath = "..\environments\dev.json"
+if (Test-Path $envConfigPath) {
+    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
+    $KeyVaultName = $envConfig.keyVaultName
+    Write-Host "Using Key Vault: $KeyVaultName from environments/dev.json" -ForegroundColor Cyan
+} else {
+    Write-Error "Could not find environment config at $envConfigPath. Aborting package publishing."
+    exit 1
+}
+
+$SecretName = "PAT"   # Replace with the name of the secret storing the PAT
 $PackagePath = "./Output/CoreUpdaterPackage.1.0.4.nupkg"  # Path to the package
-$ArtifactsFeedUrl = "https://pkgs.dev.azure.com/YourOrg/_packaging/YourFeed/nuget/v3/index.json"  # Replace with your feed URL
+$ArtifactsFeedUrl = "https://pkgs.dev.azure.com/12c/_packaging/Common/nuget/v3/index.json"  # Replace with your feed URL
 
 # Retrieve the PAT securely
 $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName
