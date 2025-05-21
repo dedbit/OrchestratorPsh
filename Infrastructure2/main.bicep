@@ -40,10 +40,21 @@ module keyVaultModule 'keyVault.bicep' = {
   }
 }
 
+// Deploy Storage Account resources using a module
+module storageModule 'storageAccount.bicep' = {
+  name: 'storageAccountDeployment'
+  scope: rg
+  params: {
+    location: location
+    githubRepoUrl: githubRepoUrl
+  }
+}
+
 // Output values
 output deploymentOutputs object = {
   resourceGroupName: resourceGroupName
   subscriptionId: subscriptionId
   keyVaultName: keyVaultModule.outputs.keyVaultName
+  storageAccountName: storageModule.outputs.storageAccountName
 }
 

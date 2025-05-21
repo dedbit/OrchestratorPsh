@@ -1,5 +1,9 @@
 # sync-parameters.ps1
 # This script synchronizes parameters between environments/dev.json and main.parameters.json
+param(
+    [Parameter(HelpMessage="Force synchronization without prompting for confirmation")]
+    [switch]$Force
+)
 
 Write-Host "Synchronizing parameters between environment config and parameters file..." -ForegroundColor Cyan
 
@@ -56,10 +60,16 @@ Compare-Values "Key Vault Name" $envKeyVaultName $paramKeyVaultName
 Compare-Values "Resource Group Name" $envResourceGroupName $paramResourceGroupName
 Compare-Values "Location" $envLocation $paramLocation
 
-# Ask if user wants to sync
-$sync = Read-Host -Prompt "Do you want to synchronize the parameters file with environment config values? (y/n)"
+# Ask if user wants to sync (unless Force is specified)
+$sync = "n"
+if ($Force) {
+    Write-Host "Force parameter specified. Synchronizing without confirmation." -ForegroundColor Yellow
+    $sync = "y"
+} else {
+    $sync = Read-Host -Prompt "Do you want to synchronize the parameters file with environment config values? (y/n)"
+}
 
-if ($sync -eq "y" -or $sync -eq "Y") {    # Update parameters file
+if ($sync -eq "y" -or $sync -eq "Y") {# Update parameters file
     $paramFile.parameters.tenantId.value = $envTenantId
     $paramFile.parameters.subscriptionId.value = $envSubscriptionId
     $paramFile.parameters.keyVaultName.value = $envKeyVaultName
@@ -79,13 +89,14 @@ if ($sync -eq "y" -or $sync -eq "Y") {    # Update parameters file
     $paramJson = $paramFile | ConvertTo-Json -Depth 10
     $paramFileContent += "`n" + $paramJson
     Set-Content -Path $paramFilePath -Value $paramFileContent
-    
-    Write-Host "Parameters file updated successfully with environment config values." -ForegroundColor Green
-    Write-Host "The following values were synchronized:" -ForegroundColor Green
+      Write-Host "Parameters file updated successfully with environment config values." -ForegroundColor Green
+    $syncMethod = if ($Force) { "automatic" } else { "manual" }
+    Write-Host "The following values were synchronized ($syncMethod sync):" -ForegroundColor Green
     Write-Host "  - Tenant ID: $envTenantId" -ForegroundColor Cyan
     Write-Host "  - Subscription ID: $envSubscriptionId" -ForegroundColor Cyan
     Write-Host "  - Key Vault Name: $envKeyVaultName" -ForegroundColor Cyan
     Write-Host "  - Resource Group Name: $envResourceGroupName" -ForegroundColor Cyan
+    Write-Host "  - Location: $envLocation" -ForegroundColor Cyan
 } else {
     Write-Host "Synchronization canceled. No changes were made." -ForegroundColor Yellow
 }
