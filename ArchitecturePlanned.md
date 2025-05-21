@@ -10,11 +10,36 @@ A scheduled script authenticates using a certificate, retrieves secrets and pack
 
 ```Mermaid
     graph TD
-    A[Scheduled PowerShell Script] --> B[Certificate-based Auth]
-    B --> C[Azure Key Vault]
-    C -->|Fetch PAT + Package List| D[Updater Module]
-    D --> E[Azure DevOps Artifacts Feed]
-    D --> F[Local PowerShell Modules Folder]
+    subgraph "Core Components"
+        U[Updater Service] 
+        W[Worker Service]
+    end
+    
+    subgraph "Authentication"
+        C[Certificate-based Auth]
+    end
+    
+    subgraph "Azure Resources"
+        KV[Azure Key Vault]
+        ADO[Azure DevOps Artifacts Feed]
+    end
+    
+    subgraph "Local Resources"
+        PS[PowerShell Modules Folder]
+        S[Scheduled Task]
+    end
+    
+    S --> U
+    U --> C
+    W --> C
+    C --> KV
+    KV -->|PAT| U
+    KV -->|Package List| U
+    KV -->|Secrets| W
+    U --> ADO
+    U --> PS
+    W --> PS
+    W --> ADO
 
 ```
 
