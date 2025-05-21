@@ -5,11 +5,13 @@ Import-Module Az
 function Get-PATFromKeyVault {
     param (
         [string]$KeyVaultName,
-        [string]$SecretName
+        [string]$SecretName,
+        [string]$TenantId,
+        [string]$SubscriptionId
     )
 
-    # Login to Azure (if not already logged in)
-    Connect-AzAccount -ErrorAction Stop
+    # Login to Azure with tenant and subscription (if not already logged in)
+    Connect-AzAccount -TenantId $TenantId -SubscriptionId $SubscriptionId -ErrorAction Stop
 
     # Retrieve the secret from Azure Key Vault
     $secret = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -ErrorAction Stop
@@ -21,7 +23,11 @@ $envConfigPath = "..\environments\dev.json"
 if (Test-Path $envConfigPath) {
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $KeyVaultName = $envConfig.keyVaultName
+    $TenantId = $envConfig.tenantId
+    $SubscriptionId = $envConfig.subscriptionId
     Write-Host "Using Key Vault: $KeyVaultName from environments/dev.json" -ForegroundColor Cyan
+    Write-Host "Using Tenant ID: $TenantId from environments/dev.json" -ForegroundColor Cyan
+    Write-Host "Using Subscription ID: $SubscriptionId from environments/dev.json" -ForegroundColor Cyan
 } else {
     Write-Error "Could not find environment config at $envConfigPath. Aborting package publishing."
     exit 1
@@ -32,7 +38,7 @@ $PackagePath = "./Output/CoreUpdaterPackage.1.0.4.nupkg"  # Path to the package
 $ArtifactsFeedUrl = "https://pkgs.dev.azure.com/12c/_packaging/Common/nuget/v3/index.json"  # Replace with your feed URL
 
 # Retrieve the PAT securely
-$PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName
+$PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
 
 # Set up the NuGet source with the PAT
 nuget.exe sources add -Name "ArtifactsFeed" -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText
