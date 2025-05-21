@@ -4,10 +4,11 @@ targetScope = 'resourceGroup'
 // Parameters
 param location string
 param githubRepoUrl string = ''
+param storageAccountName string
 
-// Define Storage Account with a more unique name
+// Define Storage Account with name from parameter
 resource testaccountsa 'Microsoft.Storage/storageAccounts@2022-09-01' = {
-  name: 'orchpsh${uniqueString(resourceGroup().id)}'
+  name: storageAccountName
   location: location
   sku: {
     name: 'Standard_LRS'

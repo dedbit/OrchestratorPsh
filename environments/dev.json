@@ -3,6 +3,7 @@
     "subscriptionId": "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3",
     "keyVaultName": "orchestratorpsh-dev-kv",
     "resourceGroupName": "orchestratorpsh-dev-rg",
+    "storageAccountName": "orchestratorpshstorage",
     "location": "West Europe",
     "appName": "OrchestratorPsh",
     "appId": "e7bb5312-8ca0-423b-8889-4b53b3f86355",

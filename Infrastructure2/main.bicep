@@ -7,6 +7,7 @@ param githubRepoUrl string = ''
 // Resource names, tenant ID, and subscription ID - now loaded from environments/dev.json
 param resourceGroupName string
 param keyVaultName string
+param storageAccountName string
 param tenantId string
 param subscriptionId string
 
@@ -47,6 +48,7 @@ module storageModule 'storageAccount.bicep' = {
   params: {
     location: location
     githubRepoUrl: githubRepoUrl
+    storageAccountName: storageAccountName
   }
 }
 
