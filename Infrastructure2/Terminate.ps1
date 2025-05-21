@@ -1,58 +1,46 @@
 # Terminate.ps1
 # This script permanently deletes all resources created by the Bicep deployment
 # including the resource group and removes Key Vault from the Azure recycle bin
-# Before running, run sync-parameters.ps1 to update main.parameters.json. 
 
-# Parameters that can be overridden
+# Default parameters - will be overridden by values from main.parameters.json
 param(
     [string]$ResourceGroupName = "orchestratorPsh2-dev-rg",
     [string]$KeyVaultName = "orchestrator2psh2-kv"
 )
 
-# Import required parameters from the parameters file if it exists
-try {
-    # First try to get parameters from environments/dev.json
-    $envConfigPath = "..\environments\dev.json"
-    $tenantId = ""
-    $subscriptionId = ""
-    $envKvName = ""
-    $envRgName = ""
+# Synchronize parameters from environments/dev.json to main.parameters.json
+Write-Host "Using sync-parameters.ps1 to synchronize parameters..." -ForegroundColor Yellow
+# The script already checks if environments/dev.json exists
+& ".\sync-parameters.ps1" -Force
+
+# Get parameters from main.parameters.json
+$parameterFilePath = "main.parameters.json"
+$tenantId = ""
+$subscriptionId = ""
+
+if (Test-Path $parameterFilePath) {
+    $parameterContent = Get-Content -Path $parameterFilePath -Raw | ConvertFrom-Json
     
-    if (Test-Path $envConfigPath) {
-        $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
-        $tenantId = $envConfig.tenantId
-        $subscriptionId = $envConfig.subscriptionId
-        $envKvName = $envConfig.keyVaultName
-        $envRgName = $envConfig.resourceGroupName
-        
-        # Use values from environment config
-        if (-not [string]::IsNullOrEmpty($envKvName)) {
-            $KeyVaultName = $envKvName
-            Write-Host "Using Key Vault Name: $KeyVaultName from environments/dev.json" -ForegroundColor Cyan
-        }
-        if (-not [string]::IsNullOrEmpty($envRgName)) {
-            $ResourceGroupName = $envRgName
-            Write-Host "Using Resource Group Name: $ResourceGroupName from environments/dev.json" -ForegroundColor Cyan
-        }
+    # Get the tenant and subscription IDs for Azure connection
+    if ($parameterContent.parameters.tenantId) {
+        $tenantId = $parameterContent.parameters.tenantId.value
+    }
+    if ($parameterContent.parameters.subscriptionId) {
+        $subscriptionId = $parameterContent.parameters.subscriptionId.value
     }
     
-    # Also check main.parameters.json (this will override environment config values if they exist)
-    $parameterFilePath = "main.parameters.json"
-    if (Test-Path $parameterFilePath) {
-        $parameterContent = Get-Content -Path $parameterFilePath -Raw | ConvertFrom-Json
-        # Override defaults with values from the parameter file if they exist
-        if ($parameterContent.parameters.resourceGroupName) {
-            $ResourceGroupName = $parameterContent.parameters.resourceGroupName.value
-            Write-Host "Using Resource Group Name: $ResourceGroupName from main.parameters.json" -ForegroundColor Cyan
-        }
-        if ($parameterContent.parameters.keyVaultName) {
-            $KeyVaultName = $parameterContent.parameters.keyVaultName.value
-            Write-Host "Using Key Vault Name: $KeyVaultName from main.parameters.json" -ForegroundColor Cyan
-        }
+    # Override default parameters with values from the parameter file
+    if ($parameterContent.parameters.resourceGroupName) {
+        $ResourceGroupName = $parameterContent.parameters.resourceGroupName.value
+        Write-Host "Using Resource Group Name: $ResourceGroupName from main.parameters.json" -ForegroundColor Cyan
+    }
+    if ($parameterContent.parameters.keyVaultName) {
+        $KeyVaultName = $parameterContent.parameters.keyVaultName.value
+        Write-Host "Using Key Vault Name: $KeyVaultName from main.parameters.json" -ForegroundColor Cyan
     }
 }
-catch {
-    Write-Warning "Could not read parameters from file. Using default values."
+else {
+    Write-Warning "Could not find parameter file at $parameterFilePath. Using default values."
 }
 
 Write-Host "Starting termination process..." -ForegroundColor Yellow
