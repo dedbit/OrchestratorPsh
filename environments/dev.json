@@ -1,8 +1,8 @@
 {
     "tenantId": "6df08080-a31a-4efa-8c05-2373fc4515fc",
     "subscriptionId": "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3",
-    "keyVaultName": "orchestrator2psh-kv",
-    "resourceGroupName": "orchestratorPsh-dev-rg",
+    "keyVaultName": "orchestratorpsh-dev-kv",
+    "resourceGroupName": "orchestratorpsh-dev-rg",
     "location": "West Europe",
     "appName": "OrchestratorPsh",
     "appId": "e7bb5312-8ca0-423b-8889-4b53b3f86355",

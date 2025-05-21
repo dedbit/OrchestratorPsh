@@ -1,6 +1,7 @@
 # Terminate.ps1
 # This script permanently deletes all resources created by the Bicep deployment
 # including the resource group and removes Key Vault from the Azure recycle bin
+# Before running, run sync-parameters.ps1 to update main.parameters.json. 
 
 # Parameters that can be overridden
 param(

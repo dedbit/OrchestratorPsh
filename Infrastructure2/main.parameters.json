@@ -13,10 +13,10 @@
       "value": "https://github.com/dedbit/OrchestratorPsh.git"
     },
     "resourceGroupName": {
-      "value": "orchestratorPsh-dev-rg"
+      "value": "orchestratorpsh-dev-rg"
     },
     "keyVaultName": {
-      "value": "orchestrator2psh-kv"
+      "value": "orchestratorpsh-dev-kv"
     },
     "tenantId": {
       "value": "6df08080-a31a-4efa-8c05-2373fc4515fc"
