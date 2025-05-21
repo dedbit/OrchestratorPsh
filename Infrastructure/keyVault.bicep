@@ -11,6 +11,7 @@ param keyVaultName string
 param location string
 param tenantId string
 param objectId string
+param appId string // Added parameter for App ID from dev.json
 
 // Define KeyVault
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
@@ -32,6 +33,16 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
             'list'
             'set'
             'delete'
+          ]
+        }
+      }
+      {
+        tenantId: tenantId
+        objectId: appId
+        permissions: {
+          secrets: [
+            'get'
+            'list'
           ]
         }
       }

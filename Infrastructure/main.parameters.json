@@ -25,6 +25,9 @@
     },
     "storageAccountName": {
       "value": "orchestratorpshstorage"
+    },
+    "appId": {
+      "value": "e7bb5312-8ca0-423b-8889-4b53b3f86355"
     }
   }
 }

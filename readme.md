@@ -1,6 +1,23 @@
 # Readme
 
+## Prerequisites
 
+### Install Bicep CLI
+Bicep is required to deploy the Azure infrastructure in this project.
+After installation, you may need to restart your terminal for the PATH to update. You can verify the installation by running:
+
+```powershell
+winget install -e --id Microsoft.Bicep
+bicep --version
+```
+
+### Azure PowerShell Module
+```powershell
+# Install Azure PowerShell module if not already installed
+if (-not (Get-Module -ListAvailable Az)) {
+    Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force
+}
+```
 
 # Todo
 

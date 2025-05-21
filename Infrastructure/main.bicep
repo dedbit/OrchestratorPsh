@@ -17,6 +17,9 @@ param location string = 'West Europe'
 // Object ID for Key Vault access policies
 param objectId string
 
+// App ID for Key Vault access policies (from dev.json)
+param appId string
+
 // Define Resource Group with tag - this places the GitHub repo tag on the resource group
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   name: resourceGroupName
@@ -38,6 +41,7 @@ module keyVaultModule 'keyVault.bicep' = {
     location: location
     tenantId: tenantId
     objectId: objectId
+    appId: appId
   }
 }
 

@@ -47,6 +47,7 @@ Write-Host "  GitHub Repo URL: $env:GITHUB_REPO_URL" -ForegroundColor Cyan
 Write-Host "  Tenant ID: $($parameterContent.parameters.tenantId.value)" -ForegroundColor Cyan
 Write-Host "  Subscription ID: $($parameterContent.parameters.subscriptionId.value)" -ForegroundColor Cyan
 Write-Host "  Object ID: $currentObjectId" -ForegroundColor Cyan
+Write-Host "  App ID: $($parameterContent.parameters.appId.value)" -ForegroundColor Cyan
 
 # Deploy the Bicep template at subscription level
 Write-Host "Deploying Bicep template at subscription level..." -ForegroundColor Green

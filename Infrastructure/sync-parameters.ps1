@@ -101,7 +101,8 @@ if ($sync -eq "y" -or $sync -eq "Y") {# Update parameters file    $paramFile.par
     Set-Content -Path $paramFilePath -Value $paramFileContent
       Write-Host "Parameters file updated successfully with environment config values." -ForegroundColor Green
     $syncMethod = if ($Force) { "automatic" } else { "manual" }
-    Write-Host "The following values were synchronized ($syncMethod sync):" -ForegroundColor Green    Write-Host "  - Tenant ID: $envTenantId" -ForegroundColor Cyan
+    Write-Host "The following values were synchronized ($syncMethod sync):" -ForegroundColor Green    
+    Write-Host "  - Tenant ID: $envTenantId" -ForegroundColor Cyan
     Write-Host "  - Subscription ID: $envSubscriptionId" -ForegroundColor Cyan
     Write-Host "  - Key Vault Name: $envKeyVaultName" -ForegroundColor Cyan
     Write-Host "  - Resource Group Name: $envResourceGroupName" -ForegroundColor Cyan
