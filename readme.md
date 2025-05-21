@@ -4,7 +4,7 @@
 
 ### Install Bicep CLI
 Bicep is required to deploy the Azure infrastructure in this project.
-After installation, you may need to restart your terminal for the PATH to update. You can verify the installation by running:
+After installation, you may need to restart your terminal for the PATH to update. 
 
 ```powershell
 winget install -e --id Microsoft.Bicep
