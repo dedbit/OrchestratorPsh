@@ -31,7 +31,6 @@ A scheduled script authenticates using a certificate, retrieves secrets and pack
     
     S --> U
     U --> C
-    W --> C
     C --> KV
     KV -->|PAT| U
     KV -->|Package List| U
@@ -39,7 +38,6 @@ A scheduled script authenticates using a certificate, retrieves secrets and pack
     U --> ADO
     U --> PS
     W --> PS
-    W --> ADO
 
 ```
 
