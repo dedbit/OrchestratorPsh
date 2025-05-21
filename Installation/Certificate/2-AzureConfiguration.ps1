@@ -98,6 +98,13 @@ Write-Host "Providing access to the app for secrets in Azure Key Vault..." -Fore
 Set-AzKeyVaultAccessPolicy -VaultName $($config.KeyVaultName) -ResourceGroupName $($config.ResourceGroupName) -ServicePrincipalName $clientId -PermissionsToSecrets get,list
 Write-Host "Access policy set for the service principal on Key Vault" -ForegroundColor Green
 
+# Step 6: Upload the .cer and .pfx files to Azure Key Vault using Import-AzKeyVaultCertificate
+Write-Host "Uploading certificate files to Azure Key Vault..." -ForegroundColor Green
+Import-AzKeyVaultCertificate -VaultName $($config.KeyVaultName) -Name $($config.CertName) -FilePath $certPath -Password $securePassword
+
+
+
+
 # Summary
 Write-Host "`n======== SETUP COMPLETE ========" -ForegroundColor Green
 Write-Host "App Name: $($config.AppName)" -ForegroundColor Cyan

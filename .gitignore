@@ -3,3 +3,5 @@ LICENSE.txt
 *.hcl
 *.tfstate
 *.tfplan
+*.pfx
+*.cer
