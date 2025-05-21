@@ -12,8 +12,9 @@ $envConfigPath = "..\environments\dev.json"
 $paramFilePath = "main.parameters.json"
 
 if (-not (Test-Path $envConfigPath)) {
-    Write-Error "Environment configuration file not found at $envConfigPath"
-    exit 1
+    Write-Warning "Could not find environment config at $envConfigPath. Will continue with parameter file values."
+    # Return without error to allow deploy-bicep.ps1 to continue
+    return
 }
 
 if (-not (Test-Path $paramFilePath)) {

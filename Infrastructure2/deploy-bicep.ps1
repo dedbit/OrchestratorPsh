@@ -17,21 +17,10 @@ Write-Host "Using GitHub repo URL: $env:GITHUB_REPO_URL"
 $currentUser = Get-AzADUser -SignedIn
 $currentObjectId = $currentUser.Id
 
-# Load environment configuration for location and other deployment settings
-$envConfigPath = "..\environments\dev.json"
-$location = ""
-
 Write-Host "Using sync-parameters.ps1 to synchronize parameters..." -ForegroundColor Yellow
 # Call sync-parameters with Force parameter to update main.parameters.json from dev.json
+# The script already checks if environments/dev.json exists
 & ".\sync-parameters.ps1" -Force
-
-# Load the environment config for deployment-specific values
-if (Test-Path $envConfigPath) {
-    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
-    $location = $envConfig.location
-} else {
-    Write-Warning "Could not find environment config at $envConfigPath. Will continue with default values."
-}
 
 # Get the parameter file to update GitHub repo URL and ObjectID
 $parameterFilePath = "main.parameters.json"
@@ -45,13 +34,8 @@ $parameterContent.parameters.githubRepoUrl.value = $env:GITHUB_REPO_URL
 $parameterContent | ConvertTo-Json -Depth 10 | Set-Content -Path $parameterFilePath
 
 # Set deployment values
-# Use location from environment config, or fall back to default
-if ([string]::IsNullOrEmpty($location)) {
-    $location = "West Europe"
-    Write-Host "Using default location: $location"
-} else {
-    Write-Host "Using Location: $location from environments/dev.json"
-}
+$location = $parameterContent.parameters.location.value
+Write-Host "Using Location: $location from parameter file"
 $deploymentName = "orchestratorPsh-deployment-$(Get-Date -Format 'yyyyMMddHHmmss')"
 
 # Show deployment parameters summary
