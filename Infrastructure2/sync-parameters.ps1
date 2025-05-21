@@ -26,11 +26,13 @@ $envTenantId = $envConfig.tenantId
 $envSubscriptionId = $envConfig.subscriptionId
 $envKeyVaultName = $envConfig.keyVaultName
 $envResourceGroupName = $envConfig.resourceGroupName
+$envLocation = $envConfig.location
 
 $paramTenantId = $paramFile.parameters.tenantId.value
 $paramSubscriptionId = $paramFile.parameters.subscriptionId.value
 $paramKeyVaultName = $paramFile.parameters.keyVaultName.value
 $paramResourceGroupName = $paramFile.parameters.resourceGroupName.value
+$paramLocation = $paramFile.parameters.location.value
 
 # Display comparison
 Write-Host "Comparing values:" -ForegroundColor Yellow
@@ -52,16 +54,17 @@ Compare-Values "Tenant ID" $envTenantId $paramTenantId
 Compare-Values "Subscription ID" $envSubscriptionId $paramSubscriptionId
 Compare-Values "Key Vault Name" $envKeyVaultName $paramKeyVaultName
 Compare-Values "Resource Group Name" $envResourceGroupName $paramResourceGroupName
+Compare-Values "Location" $envLocation $paramLocation
 
 # Ask if user wants to sync
 $sync = Read-Host -Prompt "Do you want to synchronize the parameters file with environment config values? (y/n)"
 
-if ($sync -eq "y" -or $sync -eq "Y") {
-    # Update parameters file
+if ($sync -eq "y" -or $sync -eq "Y") {    # Update parameters file
     $paramFile.parameters.tenantId.value = $envTenantId
     $paramFile.parameters.subscriptionId.value = $envSubscriptionId
     $paramFile.parameters.keyVaultName.value = $envKeyVaultName
     $paramFile.parameters.resourceGroupName.value = $envResourceGroupName
+    $paramFile.parameters.location.value = $envLocation
       # Save updated parameters file with warning header
     $paramFileContent = @"
 // -----------------------------------------------------------------

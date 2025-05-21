@@ -17,12 +17,13 @@ Write-Host "Using GitHub repo URL: $env:GITHUB_REPO_URL"
 $currentUser = Get-AzADUser -SignedIn
 $currentObjectId = $currentUser.Id
 
-# Load environment configuration for tenant, subscription IDs, key vault name, and resource group name
+# Load environment configuration for tenant, subscription IDs, key vault name, resource group name, and location
 $envConfigPath = "..\environments\dev.json"
 $tenantId = ""
 $subscriptionId = ""
 $keyVaultName = ""
 $resourceGroupName = ""
+$location = ""
 
 if (Test-Path $envConfigPath) {
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
@@ -30,11 +31,13 @@ if (Test-Path $envConfigPath) {
     $subscriptionId = $envConfig.subscriptionId
     $keyVaultName = $envConfig.keyVaultName
     $resourceGroupName = $envConfig.resourceGroupName
+    $location = $envConfig.location
     Write-Host "Loaded configuration from environments/dev.json:"
     Write-Host "  Tenant ID: $tenantId"
     Write-Host "  Subscription ID: $subscriptionId"
     Write-Host "  Key Vault Name: $keyVaultName"
     Write-Host "  Resource Group Name: $resourceGroupName"
+    Write-Host "  Location: $location"
 } else {
     Write-Warning "Could not find environment config at $envConfigPath. Will continue without environment configuration values."
 }
@@ -76,6 +79,10 @@ if (-not [string]::IsNullOrEmpty($resourceGroupName)) {
     $parameterContent.parameters.resourceGroupName.value = $resourceGroupName
     Write-Host "Using Resource Group Name: $resourceGroupName from environments/dev.json"
 }
+if (-not [string]::IsNullOrEmpty($location)) {
+    $parameterContent.parameters.location.value = $location
+    Write-Host "Using Location: $location from environments/dev.json"
+}
 
 # Combine the warning header with the JSON content
 $parameterJson = $parameterContent | ConvertTo-Json -Depth 10
@@ -83,13 +90,18 @@ $parameterFileContent += "`n" + $parameterJson
 Set-Content -Path $parameterFilePath -Value $parameterFileContent
 
 # Set deployment values
-$location = "West Europe"
+# Use location from environment config, or fall back to default
+if ([string]::IsNullOrEmpty($location)) {
+    $location = "West Europe"
+    Write-Host "Using default location: $location"
+}
 $deploymentName = "orchestratorPsh-deployment-$(Get-Date -Format 'yyyyMMddHHmmss')"
 
 # Show deployment parameters summary
 Write-Host "Deploying with the following parameters:" -ForegroundColor Green
 Write-Host "  Resource Group: $($parameterContent.parameters.resourceGroupName.value)" -ForegroundColor Cyan
 Write-Host "  Key Vault: $($parameterContent.parameters.keyVaultName.value)" -ForegroundColor Cyan
+Write-Host "  Location: $($parameterContent.parameters.location.value)" -ForegroundColor Cyan
 Write-Host "  GitHub Repo URL: $env:GITHUB_REPO_URL" -ForegroundColor Cyan
 Write-Host "  Tenant ID: $($parameterContent.parameters.tenantId.value)" -ForegroundColor Cyan
 Write-Host "  Subscription ID: $($parameterContent.parameters.subscriptionId.value)" -ForegroundColor Cyan

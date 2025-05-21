@@ -1,0 +1,4 @@
+- Focus on just requested change. 
+- Make as minimal changes as possible. 
+- If you see things that would be nice to implement, suggest them to me. Dont just make the changes. 
+- Ask questions if anything is unclear. 

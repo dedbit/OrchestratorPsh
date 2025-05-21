@@ -3,18 +3,19 @@
 
 # Load environment configuration
 $envConfigPath = "..\environments\dev.json"
-if (Test-Path $envConfigPath) {
-    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
+if (Test-Path $envConfigPath) {    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $tenantId = $envConfig.tenantId
     $subscriptionId = $envConfig.subscriptionId
     $keyVaultName = $envConfig.keyVaultName
     $resourceGroupName = $envConfig.resourceGroupName
+    $location = $envConfig.location
     
     Write-Host "Environment configuration loaded successfully:" -ForegroundColor Green
     Write-Host "  Tenant ID: $tenantId" -ForegroundColor Cyan
     Write-Host "  Subscription ID: $subscriptionId" -ForegroundColor Cyan
     Write-Host "  Key Vault Name: $keyVaultName" -ForegroundColor Cyan
     Write-Host "  Resource Group Name: $resourceGroupName" -ForegroundColor Cyan
+    Write-Host "  Location: $location" -ForegroundColor Cyan
     
     # Check parameter file
     $parameterFilePath = "main.parameters.json"
@@ -27,12 +28,12 @@ if (Test-Path $envConfigPath) {
         Write-Host "  Key Vault: $($parameterContent.parameters.keyVaultName.value)" -ForegroundColor Cyan
         Write-Host "  Tenant ID in parameters file: $($parameterContent.parameters.tenantId.value)" -ForegroundColor Yellow
         Write-Host "  Subscription ID in parameters file: $($parameterContent.parameters.subscriptionId.value)" -ForegroundColor Yellow
-        
-        # Update parameter file with values from environment config
+          # Update parameter file with values from environment config
         $parameterContent.parameters.tenantId.value = $tenantId
         $parameterContent.parameters.subscriptionId.value = $subscriptionId
         $parameterContent.parameters.keyVaultName.value = $keyVaultName
         $parameterContent.parameters.resourceGroupName.value = $resourceGroupName
+        $parameterContent.parameters.location.value = $location
         # Save updated parameters file with warning header
         $paramFileContent = @"
 // -----------------------------------------------------------------
