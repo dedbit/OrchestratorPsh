@@ -29,6 +29,10 @@ A scheduled script authenticates using a certificate, retrieves secrets and pack
         S[Scheduled Task]
     end
     
+    subgraph "Development"
+        D[Module Development]
+    end
+    
     S --> U
     U --> C
     C --> KV
@@ -38,6 +42,7 @@ A scheduled script authenticates using a certificate, retrieves secrets and pack
     U --> ADO
     U --> PS
     W --> PS
+    D -->|Publish| ADO
 
 ```
 
