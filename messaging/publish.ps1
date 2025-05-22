@@ -21,12 +21,6 @@ function Get-PATFromKeyVault {
     return $secret.SecretValueText
 }
 
-# Parameters
-param (
-    [string]$PackagePath = "..\Output\MessagingPackage.1.0.0.nupkg",
-    [string]$Version = "1.0.0"
-)
-
 # Define variables
 $envConfigPath = "..\environments\dev.json"
 if (Test-Path $envConfigPath) {
@@ -42,11 +36,24 @@ if (Test-Path $envConfigPath) {
     exit 1
 }
 
-# If package path is the default, but version is specified, update the path
-if ($PackagePath -eq "..\Output\MessagingPackage.1.0.0.nupkg" -and $Version -ne "1.0.0") {
-    $PackagePath = "..\Output\MessagingPackage.$Version.nupkg"
-    Write-Host "Updated package path to: $PackagePath" -ForegroundColor Yellow
+# Get the package version from the nuspec file
+$packagePath = "MessagingPackage.nuspec"
+$nuspecContent = Get-Content $packagePath -Raw
+if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
+    $major = $matches[1]
+    $minor = $matches[2]
+    $patch = $matches[3]
+    $version = "$major.$minor.$patch"
+    Write-Host "Package version from nuspec: $version" -ForegroundColor Cyan
+} else {
+    Write-Error "Failed to find version in nuspec file."
+    exit 1
 }
+
+# Detect the latest package in the output directory
+$outputDirectory = "..\Output"
+$PackagePath = Join-Path -Path $outputDirectory -ChildPath "MessagingPackage.$version.nupkg"
+Write-Host "Using package path: $PackagePath" -ForegroundColor Cyan
 
 $SecretName = "PAT"   # Replace with the name of the secret storing the PAT
 $ArtifactsFeedUrl = "https://pkgs.dev.azure.com/12c/_packaging/Common/nuget/v3/index.json"  # Replace with your feed URL
