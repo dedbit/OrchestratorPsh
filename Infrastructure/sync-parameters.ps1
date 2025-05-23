@@ -33,13 +33,17 @@ $envKeyVaultName = $envConfig.keyVaultName
 $envResourceGroupName = $envConfig.resourceGroupName
 $envStorageAccountName = $envConfig.storageAccountName
 $envLocation = $envConfig.location
+$envAppObjectId = $envConfig.appObjectId
 
+# Handle potential missing parameters more safely
 $paramTenantId = $paramFile.parameters.tenantId.value
 $paramSubscriptionId = $paramFile.parameters.subscriptionId.value
 $paramKeyVaultName = $paramFile.parameters.keyVaultName.value
 $paramResourceGroupName = $paramFile.parameters.resourceGroupName.value
-$paramStorageAccountName = if ($paramFile.parameters.storageAccountName) { $paramFile.parameters.storageAccountName.value } else { '' }
+$paramStorageAccountName = $paramFile.parameters.storageAccountName.value
 $paramLocation = $paramFile.parameters.location.value
+$paramAppObjectId = $paramFile.parameters.appObjectId.value
+
 
 # Display comparison
 Write-Host "Comparing values:" -ForegroundColor Yellow
@@ -63,6 +67,7 @@ Compare-Values "Key Vault Name" $envKeyVaultName $paramKeyVaultName
 Compare-Values "Resource Group Name" $envResourceGroupName $paramResourceGroupName
 Compare-Values "Storage Account Name" $envStorageAccountName $paramStorageAccountName
 Compare-Values "Location" $envLocation $paramLocation
+Compare-Values "App Object ID" $envAppObjectId $paramAppObjectId
 
 # Ask if user wants to sync (unless Force is specified)
 $sync = "n"
@@ -73,19 +78,18 @@ if ($Force) {
     $sync = Read-Host -Prompt "Do you want to synchronize the parameters file with environment config values? (y/n)"
 }
 
-if ($sync -eq "y" -or $sync -eq "Y") {# Update parameters file    $paramFile.parameters.tenantId.value = $envTenantId
+if ($sync -eq "y" -or $sync -eq "Y") {
+    # Update parameters file
+    $paramFile.parameters.tenantId.value = $envTenantId
     $paramFile.parameters.subscriptionId.value = $envSubscriptionId
     $paramFile.parameters.keyVaultName.value = $envKeyVaultName
     $paramFile.parameters.resourceGroupName.value = $envResourceGroupName
     $paramFile.parameters.location.value = $envLocation
+    $paramFile.parameters.storageAccountName.value = $envStorageAccountName
+    $paramFile.parameters.appObjectId.value = $envAppObjectId
     
-    # Check if storageAccountName parameter exists, if not, add it
-    if (-not $paramFile.parameters.storageAccountName) {
-        $paramFile.parameters | Add-Member -MemberType NoteProperty -Name 'storageAccountName' -Value @{value = $envStorageAccountName}
-    } else {
-        $paramFile.parameters.storageAccountName.value = $envStorageAccountName
-    }
-      # Save updated parameters file with warning header
+    # Save updated parameters file with warning header
+
     $paramFileContent = @"
 // -----------------------------------------------------------------
 // AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
@@ -108,6 +112,7 @@ if ($sync -eq "y" -or $sync -eq "Y") {# Update parameters file    $paramFile.par
     Write-Host "  - Resource Group Name: $envResourceGroupName" -ForegroundColor Cyan
     Write-Host "  - Storage Account Name: $envStorageAccountName" -ForegroundColor Cyan
     Write-Host "  - Location: $envLocation" -ForegroundColor Cyan
+    Write-Host "  - App Object ID: $envAppObjectId" -ForegroundColor Cyan
 } else {
     Write-Host "Synchronization canceled. No changes were made." -ForegroundColor Yellow
 }
