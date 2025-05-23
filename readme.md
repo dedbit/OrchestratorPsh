@@ -21,7 +21,7 @@ if (-not (Get-Module -ListAvailable Az)) {
 }
 ```
 
-# Todo
+## Todo
 
 4. **Develop Updater Script**
     - Authenticate with certificate.
