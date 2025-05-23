@@ -23,12 +23,16 @@ if (-not (Get-Module -ListAvailable Az)) {
 
 1. **Store Secrets in Azure Key Vault**
     - Add the PAT and package list JSON as secrets.
+    Done
 
 2. **Create Azure AD App Registration**
     - Register an app and upload the certificate for authentication.
+    Done. AppId is found in dev.json. 
 
 3. **Install Certificate on Target Machine**
     - Import the private key used for authentication.
+    Storing certificate in personal vault. 
+    Installed on fm personal certs. 
 
 4. **Develop Updater Script**
     - Authenticate with certificate.
