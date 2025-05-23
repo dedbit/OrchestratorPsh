@@ -20,13 +20,29 @@ function Get-PATFromKeyVault {
         Connect-AzAccount -TenantId $TenantId -SubscriptionId $SubscriptionId -ErrorAction Stop
     } else {
         Write-Host "Already connected to Azure with appropriate Tenant and Subscription" -ForegroundColor Green
-    }
-
-    # Retrieve the secret from Azure Key Vault
+    }    # Retrieve the secret from Azure Key Vault
     $secret = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -ErrorAction Stop
     
-    # Convert secure string to plain text
-    $secretValueText = $secret.SecretValue | ConvertFrom-SecureString -AsPlainText
+    # Extract the secret value properly - handle different possible formats
+    try {
+        # First try the newer way (SecretValue as SecureString)
+        if ($secret.SecretValue -is [System.Security.SecureString]) {
+            $secretValueText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+                [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret.SecretValue))
+        }
+        # Then try direct text (older versions)
+        elseif ($null -ne $secret.SecretValueText) {
+            $secretValueText = $secret.SecretValueText
+        }
+        else {
+            throw "Could not extract secret value using known methods."
+        }
+    }
+    catch {
+        Write-Error "Error extracting secret value: $($_.Exception.Message)"
+        throw
+    }
+    
     return $secretValueText
 }
 
