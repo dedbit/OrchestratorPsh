@@ -4,7 +4,6 @@
 
 PowerShell-Based System Architecture for Package Management
 
-### PowerShell-Based System Architecture for Package Management
 
 #### 1. **Package Updater Service**
 
@@ -23,11 +22,10 @@ PowerShell-Based System Architecture for Package Management
     - Runs as background jobs to prevent blocking the system during operations.
 
 #### 4. **Integration Points**
-
+#### 3. **Integration Points**
 - **Artifact Feed API Integration**: Supports APIs like Azure DevOps and NuGet for fetching packages.
-- **Key Vault**: Contains credentials, like PAT token. 
+- **Key Vault**: Contains credentials, such as the Personal Access Token (PAT) for Azure DevOps. 
 
 #### 5. **Deployment Considerations**
 
-- Minimal system impact during updates to ensure uninterrupted operations.
-- Disaster recovery procedures to handle failures effectively.
+- Ensure minimal impact during updates.
