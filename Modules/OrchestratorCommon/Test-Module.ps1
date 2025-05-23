@@ -54,14 +54,14 @@ if (Test-Path $envConfigPath) {
     $TenantId = $envConfig.tenantId
     $SubscriptionId = $envConfig.subscriptionId
     
-    Write-Host "Using Key Vault: $KeyVaultName`nUsing Tenant ID: $TenantId`nUsing Subscription ID: $SubscriptionId`n`nTesting Connect-ToAzure function..." -ForegroundColor Cyan
+    Write-Host "Using Key Vault: $KeyVaultName`nUsing Tenant ID: $TenantId`nUsing Subscription ID: $SubscriptionId`n`nTesting Connect-12Azure function..." -ForegroundColor Cyan
     
     # Skip the interactive login part in test mode
     Write-Host "INFO: Skipping interactive Azure connection test to avoid login prompt." -ForegroundColor Yellow
     Write-Host "Connection test skipped." -ForegroundColor Yellow
     
     <# Comment out the actual connection test to avoid interactive prompts
-    $connected = Connect-ToAzure -TenantId $TenantId -SubscriptionId $SubscriptionId
+    $connected = Connect-12Azure -TenantId $TenantId -SubscriptionId $SubscriptionId
     if ($connected) {
         Write-Host "Connection successful!" -ForegroundColor Green
     } else {

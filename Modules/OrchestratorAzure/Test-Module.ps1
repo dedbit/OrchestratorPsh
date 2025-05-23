@@ -32,17 +32,17 @@ $envConfigPath = Join-Path -Path $scriptRoot -ChildPath "..\..\environments\dev.
 if (Test-Path $envConfigPath) {
     # Load environment config
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
-    $KeyVaultName = $envConfig.keyVaultName
-    $TenantId = $envConfig.tenantId
-    $SubscriptionId = $envConfig.subscriptionId
+    $KeyVaultName = $12cConfig.keyVaultName
+    $TenantId = $12cConfig.tenantId
+    $SubscriptionId = $12cConfig.subscriptionId
     
     Write-Host "Using Key Vault: $KeyVaultName" -ForegroundColor Cyan
     Write-Host "Using Tenant ID: $TenantId" -ForegroundColor Cyan
     Write-Host "Using Subscription ID: $SubscriptionId" -ForegroundColor Cyan
     
-    # Test Connect-ToAzure function
-    Write-Host "`nTesting Connect-ToAzure function..." -ForegroundColor Cyan
-    $connected = Connect-ToAzure -TenantId $TenantId -SubscriptionId $SubscriptionId
+    # Test Connect-12Azure function
+    Write-Host "`nTesting Connect-12Azure function..." -ForegroundColor Cyan
+    $connected = Connect-12Azure #-TenantId $TenantId -SubscriptionId $SubscriptionId
     if ($connected) {
         Write-Host "Connection successful!" -ForegroundColor Green
     } else {

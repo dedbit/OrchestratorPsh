@@ -15,7 +15,7 @@ This structure allows existing scripts to continue working without modification 
 
 All functions from OrchestratorAzure are automatically exported by this module:
 
-- `Connect-ToAzure` - Connects to Azure with the specified tenant and subscription
+- `Connect-12Azure` - Connects to Azure with the specified tenant and subscription
 - `Get-PATFromKeyVault` - Retrieves a Personal Access Token (PAT) from an Azure Key Vault
 
 ## Usage
@@ -25,7 +25,7 @@ All functions from OrchestratorAzure are automatically exported by this module:
 Import-Module -Path ".\Modules\OrchestratorCommon"
 
 # Connect to Azure
-Connect-ToAzure -TenantId "your-tenant-id" -SubscriptionId "your-subscription-id"
+Connect-12Azure -TenantId "your-tenant-id" -SubscriptionId "your-subscription-id"
 
 # Use the Get-PATFromKeyVault function
 $pat = Get-PATFromKeyVault -KeyVaultName "your-keyvault" -SecretName "PAT" -TenantId "your-tenant-id" -SubscriptionId "your-subscription-id"

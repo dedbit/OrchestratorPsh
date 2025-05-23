@@ -2,7 +2,7 @@
 # Module for Azure-related functions used across OrchestratorPsh scripts
 
 # Function to connect to Azure with the specified tenant and subscription
-function Connect-ToAzure {
+function Connect-12Azure {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $false)]
@@ -90,7 +90,7 @@ function Get-PATFromKeyVault {
 
     try {
         # Connect to Azure using the extracted connection function
-        $connected = Connect-ToAzure -TenantId $TenantId -SubscriptionId $SubscriptionId -ForceNewLogin:$ForceNewLogin
+        $connected = Connect-12Azure -ForceNewLogin:$ForceNewLogin
         if (-not $connected) {
             throw "Failed to connect to Azure"
         }
@@ -149,8 +149,9 @@ function Get-ServicePrincipalObjectId {
     )
     
     try {
-        # Connect to Azure using the existing Connect-ToAzure function
-        $connected = Connect-ToAzure -TenantId $TenantId -SubscriptionId $SubscriptionId -ForceNewLogin:$ForceNewLogin
+        # Connect to Azure using the existing Connect-12Azure function
+        # $connected = Connect-12Azure -TenantId $TenantId -SubscriptionId $SubscriptionId -ForceNewLogin:$ForceNewLogin
+        $connected = Connect-12Azure -ForceNewLogin:$ForceNewLogin
         if (-not $connected) {
             throw "Failed to connect to Azure"
         }
@@ -173,4 +174,4 @@ function Get-ServicePrincipalObjectId {
 }
 
 # Export the functions
-Export-ModuleMember -Function Get-PATFromKeyVault, Connect-ToAzure, Get-ServicePrincipalObjectId, Connect-ToAzureWithCertificate
+Export-ModuleMember -Function Get-PATFromKeyVault, Connect-12Azure, Get-ServicePrincipalObjectId, Connect-ToAzureWithCertificate
