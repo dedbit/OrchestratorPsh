@@ -44,6 +44,38 @@ function Connect-ToAzure {
     }
 }
 
+# Function to connect to Azure using a certificate
+function Connect-ToAzureWithCertificate {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$TenantId,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SubscriptionId,
+
+        [Parameter(Mandatory = $true)]
+        [string]$CertificateThumbprint,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ApplicationId
+    )
+
+    try {
+        Write-Host "Connecting to Azure using certificate authentication..." -ForegroundColor Cyan
+
+        # Create a service principal connection using the certificate
+        $connection = Connect-AzAccount -ServicePrincipal -TenantId $TenantId -SubscriptionId $SubscriptionId `
+            -CertificateThumbprint $CertificateThumbprint -ApplicationId $ApplicationId -ErrorAction Stop
+
+        Write-Host "Successfully connected to Azure using certificate authentication." -ForegroundColor Green
+        return $connection
+    } catch {
+        Write-Error "Error connecting to Azure using certificate: $($_.Exception.Message)"
+        throw
+    }
+}
+
 # Function to retrieve the Personal Access Token (PAT) from Azure Key Vault
 function Get-PATFromKeyVault {
     param (
@@ -139,4 +171,4 @@ function Get-ServicePrincipalObjectId {
 }
 
 # Export the functions
-Export-ModuleMember -Function Get-PATFromKeyVault, Connect-ToAzure, Get-ServicePrincipalObjectId
+Export-ModuleMember -Function Get-PATFromKeyVault, Connect-ToAzure, Get-ServicePrincipalObjectId, Connect-ToAzureWithCertificate
