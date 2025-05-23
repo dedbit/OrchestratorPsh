@@ -16,14 +16,15 @@ if (Test-Path $moduleRoot) {
 
 # Define variables
 $envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\environments\dev.json"
-if (Test-Path $envConfigPath) {
-    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
+if (Test-Path $envConfigPath) {    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $KeyVaultName = $envConfig.keyVaultName
     $TenantId = $envConfig.tenantId
     $SubscriptionId = $envConfig.subscriptionId
+    $ArtifactsFeedUrl = $envConfig.artifactsFeedUrl
     Write-Host "Using Key Vault: $KeyVaultName from environments/dev.json" -ForegroundColor Cyan
     Write-Host "Using Tenant ID: $TenantId from environments/dev.json" -ForegroundColor Cyan
     Write-Host "Using Subscription ID: $SubscriptionId from environments/dev.json" -ForegroundColor Cyan
+    Write-Host "Using Artifacts Feed URL: $ArtifactsFeedUrl from environments/dev.json" -ForegroundColor Cyan
 } else {
     Write-Error "Could not find environment config at $envConfigPath. Aborting package publishing."
     exit 1
@@ -49,7 +50,6 @@ $PackagePath = Join-Path -Path $outputDirectory -ChildPath "MessagingPackage.$ve
 Write-Host "Using package path: $PackagePath" -ForegroundColor Cyan
 
 $SecretName = "PAT"   # Replace with the name of the secret storing the PAT
-$ArtifactsFeedUrl = "https://pkgs.dev.azure.com/12c/_packaging/Common/nuget/v3/index.json"  # Replace with your feed URL
 
 # Verify the package exists
 if (-not (Test-Path $PackagePath)) {

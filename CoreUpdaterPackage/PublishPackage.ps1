@@ -18,9 +18,11 @@ if (Test-Path $envConfigPath) {
     $KeyVaultName = $envConfig.keyVaultName
     $TenantId = $envConfig.tenantId
     $SubscriptionId = $envConfig.subscriptionId
+    $ArtifactsFeedUrl = $envConfig.artifactsFeedUrl
     Write-Host "Using Key Vault: $KeyVaultName from environments/dev.json" -ForegroundColor Cyan
     Write-Host "Using Tenant ID: $TenantId from environments/dev.json" -ForegroundColor Cyan
     Write-Host "Using Subscription ID: $SubscriptionId from environments/dev.json" -ForegroundColor Cyan
+    Write-Host "Using Artifacts Feed URL: $ArtifactsFeedUrl from environments/dev.json" -ForegroundColor Cyan
 } else {
     Write-Error "Could not find environment config at $envConfigPath. Aborting package publishing."
     exit 1
@@ -28,7 +30,6 @@ if (Test-Path $envConfigPath) {
 
 $SecretName = "PAT"   # Replace with the name of the secret storing the PAT
 $PackagePath = "./Output/CoreUpdaterPackage.1.0.4.nupkg"  # Path to the package
-$ArtifactsFeedUrl = "https://pkgs.dev.azure.com/12c/_packaging/Common/nuget/v3/index.json"  # Replace with your feed URL
 
 # Retrieve the PAT securely
 $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
