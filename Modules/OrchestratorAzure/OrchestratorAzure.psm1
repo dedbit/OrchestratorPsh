@@ -97,5 +97,46 @@ function Get-PATFromKeyVault {
     }
 }
 
+# Function to convert an Application ID to Object ID (Service Principal ID)
+function Get-ServicePrincipalObjectId {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$AppId,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$TenantId,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$SubscriptionId,
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$ForceNewLogin
+    )
+    
+    try {
+        # Connect to Azure using the existing Connect-ToAzure function
+        $connected = Connect-ToAzure -TenantId $TenantId -SubscriptionId $SubscriptionId -ForceNewLogin:$ForceNewLogin
+        if (-not $connected) {
+            throw "Failed to connect to Azure"
+        }
+        
+        # Look up the service principal by Application ID
+        Write-Verbose "Looking up object ID for Application ID: $AppId"
+        $servicePrincipal = Get-AzADServicePrincipal -ApplicationId $AppId -ErrorAction Stop
+        
+        if ($null -eq $servicePrincipal) {
+            throw "No service principal found for Application ID: $AppId"
+        }
+        
+        Write-Verbose "Found service principal with Object ID: $($servicePrincipal.Id)"
+        return $servicePrincipal.Id
+    }
+    catch {
+        Write-Error "Error in Get-ServicePrincipalObjectId: $($_.Exception.Message)"
+        throw
+    }
+}
+
 # Export the functions
-Export-ModuleMember -Function Get-PATFromKeyVault, Connect-ToAzure
+Export-ModuleMember -Function Get-PATFromKeyVault, Connect-ToAzure, Get-ServicePrincipalObjectId
