@@ -11,6 +11,11 @@
 $configPath = "..\..\environments\dev.json" # Adjust the path as needed
 $config = Get-Content -Path $configPath | ConvertFrom-Json
 
+# Import OrchestratorCommon module for Azure operations
+$moduleRoot = "..\Modules\OrchestratorCommon"
+Import-Module $moduleRoot -Force
+
+
 $certPassword = Read-Host -Prompt "Enter certificate password" 
 $securePassword = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
 
@@ -59,11 +64,20 @@ Write-Host "Azure AD application created with client ID: $clientId" -ForegroundC
 
 # Create a service principal for the application
 $sp = New-AzADServicePrincipal -ApplicationId $clientId
-Write-Host "Service principal created with object ID: $($sp.Id)" -ForegroundColor Green
+$spObjectId = $sp.Id
+Write-Host "Service principal created with object ID: $spObjectId" -ForegroundColor Green
+
+
+# Get the Object ID using the Get-ServicePrincipalObjectId function from OrchestratorCommon module
+$confirmedObjectId = Get-ServicePrincipalObjectId -AppId $clientId -TenantId $tenantId -SubscriptionId $($config.SubscriptionId)
+Write-Host -ForegroundColor Magenta "Update the environment config with the following Object ID: $confirmedObjectId" -ForegroundColor Green
+
+
+
+
 
 # Step 4: Upload the certificate to the app registration
 Write-Host "Uploading certificate to app registration..." -ForegroundColor Green
-
 # Read the .cer file content
 $certData = [System.Convert]::ToBase64String(([System.IO.File]::ReadAllBytes((ls $certCerPath).FullName)))
 
@@ -78,7 +92,7 @@ try {
     }
 
     # Add certificate to app registration
-    $keyCredential = New-AzADAppCredential -ApplicationId $clientId `
+    New-AzADAppCredential -ApplicationId $clientId `
         -CertValue $certData `
         -StartDate $startDate `
         -EndDate $endDate
@@ -94,14 +108,17 @@ try {
 # Step 5: Provide access to the app to secrets in Azure Key Vault
 Write-Host "Providing access to the app for secrets in Azure Key Vault..." -ForegroundColor Green
 
-# Set access policy for the service principal
-Set-AzKeyVaultAccessPolicy -VaultName $($config.KeyVaultName) -ResourceGroupName $($config.ResourceGroupName) -ServicePrincipalName $clientId -PermissionsToSecrets get,list
-Write-Host "Access policy set for the service principal on Key Vault" -ForegroundColor Green
+# Set access policy for the service principal using Object ID
+# Method 1: Use the Object ID directly
+Set-AzKeyVaultAccessPolicy -VaultName $($config.KeyVaultName) -ResourceGroupName $($config.ResourceGroupName) -ObjectId $spObjectId -PermissionsToSecrets get,list
+Write-Host "Access policy set for the service principal on Key Vault using Object ID" -ForegroundColor Green
+
+# Note: The legacy approach using ServicePrincipalName (which uses appId) is shown below:
+# Set-AzKeyVaultAccessPolicy -VaultName $($config.KeyVaultName) -ResourceGroupName $($config.ResourceGroupName) -ServicePrincipalName $clientId -PermissionsToSecrets get,list
 
 # Step 6: Upload the .cer and .pfx files to Azure Key Vault using Import-AzKeyVaultCertificate
 Write-Host "Uploading certificate files to Azure Key Vault..." -ForegroundColor Green
 Import-AzKeyVaultCertificate -VaultName $($config.KeyVaultName) -Name $($config.CertName) -FilePath $certPath -Password $securePassword
-
 
 
 
@@ -129,6 +146,16 @@ Connect-AzAccount -ServicePrincipal -CertificateThumbprint "$certThumbprint" -Ap
 # `$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("$certPath", `$certPassword)
 # Connect-AzAccount -ServicePrincipal -CertificateThumbprint `$cert.Thumbprint -ApplicationId "$clientId" -TenantId "$tenantId"
 "@ -ForegroundColor Magenta
+
+# Update dev.json file with the new values
+Write-Host "`nUpdating dev.json file with new values..." -ForegroundColor Yellow
+$config.appId = $clientId
+$config.certThumbprint = $certThumbprint
+$config.servicePrincipalObjectId = $spObjectId
+
+# Save the updated config
+$config | ConvertTo-Json -Depth 10 | Set-Content -Path $configPath
+Write-Host "dev.json updated successfully with appId, certThumbprint and servicePrincipalObjectId" -ForegroundColor Green
 
 
 
