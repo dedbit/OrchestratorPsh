@@ -7,10 +7,47 @@ function Connect-12Configuration {
     param (
         # Parameters can be added here in the future
     )
+    
+    # Correct the relative path to the configuration file
+    $configFilePath = Join-Path -Path (Split-Path -Path (Get-PSCommandPath) -Parent) -ChildPath "..\..\environments\dev.json"
 
-    # Implementation to be added later
-    Write-Host "Connect-12Configuration function is not implemented yet." -ForegroundColor Yellow
+    try {
+        # Check if the configuration file exists
+        if (-Not (Test-Path -Path $configFilePath)) {
+            throw "Configuration file not found at path: $configFilePath"
+        }
+
+        # Load the configuration file
+        $configContent = Get-Content -Path $configFilePath -Raw | ConvertFrom-Json
+
+        # Store the configuration in a global variable
+        $Global:Configuration = $configContent
+
+        Write-Host "Configuration loaded successfully and stored in global variable." -ForegroundColor Green
+    } catch {
+        Write-Error "Failed to load configuration: $($_.Exception.Message)"
+    }
 }
 
-# Export the function
-Export-ModuleMember -Function Connect-12Configuration
+# Function to get the PowerShell command path, compatible with both scripts and terminal
+function Get-PSCommandPath {
+    [CmdletBinding()]
+    param ()
+
+    try {
+        # Determine the command path
+        if ($null -ne $PSCommandPath) {
+            # If running in a script, use $PSCommandPath
+            return $PSCommandPath
+        } else {
+            # If running in a terminal, use the current location
+            return (Get-Location).Path
+        }
+    } catch {
+        Write-Error "Failed to determine the PowerShell command path: $($_.Exception.Message)"
+        throw
+    }
+}
+
+# Export the functions
+Export-ModuleMember -Function Connect-12Configuration, Get-PSCommandPath
