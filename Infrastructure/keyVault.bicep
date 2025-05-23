@@ -60,6 +60,9 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
         {
           value: '185.162.105.7'
         }
+        {
+          value: '185.162.105.5'
+        }
       ]
     }
   }
@@ -73,7 +76,7 @@ resource patSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (createEm
   parent: keyVault
   name: 'PAT'
   properties: {
-    value: ''
+    value: 'Initialized'
   }
 }
 
