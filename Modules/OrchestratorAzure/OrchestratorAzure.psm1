@@ -5,37 +5,39 @@
 function Connect-ToAzure {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [string]$TenantId,
-        
-        [Parameter(Mandatory = $true)]
-        [string]$SubscriptionId,
-        
         [Parameter(Mandatory = $false)]
         [switch]$ForceNewLogin
     )
     
     try {
+        # Retrieve TenantId and SubscriptionId from $global:12cConfig
+        if (-not $global:12cConfig) {
+            throw "Global configuration variable '12cConfig' is not set. Please initialize it first."
+        }
+
+        $TenantId = $global:12cConfig.TenantId
+        $SubscriptionId = $global:12cConfig.SubscriptionId
+
         # Check if already connected to Azure with correct tenant and subscription
         $context = Get-AzContext
         $needsLogin = $ForceNewLogin -or (-not $context) -or 
                       ($context.Tenant.Id -ne $TenantId) -or 
                       ($context.Subscription.Id -ne $SubscriptionId)
-        
+
         if ($needsLogin) {
             Write-Host "Connecting to Azure with Tenant ID: $TenantId and Subscription ID: $SubscriptionId" -ForegroundColor Cyan
-            
+
             if ($ForceNewLogin) {
                 # Force disconnect if already connected
                 Disconnect-AzAccount -ErrorAction SilentlyContinue
                 Clear-AzContext -Force -ErrorAction SilentlyContinue
             }
-            
+
             Connect-AzAccount -TenantId $TenantId -SubscriptionId $SubscriptionId -ErrorAction Stop
         } else {
             Write-Host "Already connected to Azure with appropriate Tenant and Subscription" -ForegroundColor Green
         }
-        
+
         return $true
     }
     catch {
