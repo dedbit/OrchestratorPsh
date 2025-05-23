@@ -14,21 +14,21 @@ if (Test-Path $moduleRoot) {
 
 # Define variables
 $envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\environments\dev.json"
-if (Test-Path $envConfigPath) {
-    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
+if (Test-Path $envConfigPath) {    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $KeyVaultName = $envConfig.keyVaultName
     $TenantId = $envConfig.tenantId
     $SubscriptionId = $envConfig.subscriptionId
+    $ArtifactsFeedUrl = $envConfig.artifactsFeedUrl
     Write-Host "Using Key Vault: $KeyVaultName from environments/dev.json" -ForegroundColor Cyan
     Write-Host "Using Tenant ID: $TenantId from environments/dev.json" -ForegroundColor Cyan
     Write-Host "Using Subscription ID: $SubscriptionId from environments/dev.json" -ForegroundColor Cyan
+    Write-Host "Using Artifacts Feed URL: $ArtifactsFeedUrl from environments/dev.json" -ForegroundColor Cyan
 } else {
     Write-Error "Could not find environment config at $envConfigPath. Aborting script."
     exit 1
 }
 
 $SecretName = "PAT"   # Name of the secret storing the PAT
-$ArtifactsFeedUrl = "https://pkgs.dev.azure.com/12c/_packaging/Common/nuget/v3/index.json"  # Your feed URL
 
 # Retrieve the PAT securely
 try {
