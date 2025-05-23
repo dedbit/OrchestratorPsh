@@ -1,8 +1,19 @@
 # OrchestratorCommon Module
 
-This module provides common functions for the OrchestratorPsh project.
+This module serves as a wrapper around the OrchestratorAzure module. It provides backward compatibility for scripts that import OrchestratorCommon.
 
-## Functions
+## Purpose
+
+The OrchestratorCommon module has been refactored into:
+
+1. **OrchestratorAzure** - Contains all Azure-related functionality that was previously in OrchestratorCommon
+2. **OrchestratorCommon** - Now acts as a loader that imports OrchestratorAzure and re-exports its functions
+
+This structure allows existing scripts to continue working without modification while providing better organization of code.
+
+## Available Functions
+
+All functions from OrchestratorAzure are automatically exported by this module:
 
 - `Connect-ToAzure` - Connects to Azure with the specified tenant and subscription
 - `Get-PATFromKeyVault` - Retrieves a Personal Access Token (PAT) from an Azure Key Vault

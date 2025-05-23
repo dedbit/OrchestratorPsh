@@ -1,37 +1,15 @@
 # Test-Module.ps1
-# Script to test the OrchestratorCommon wrapper module functionality
+# Script to test the OrchestratorAzure module functionality
 
-# Verify OrchestratorAzure module exists
-$azureModulePath = Join-Path -Path $PSScriptRoot -ChildPath "..\OrchestratorAzure\OrchestratorAzure.psd1"
-if (-not (Test-Path $azureModulePath)) {
-    Write-Error "OrchestratorAzure module not found at $azureModulePath. This is required by OrchestratorCommon."
-    exit 1
-}
-else {
-    Write-Host "OrchestratorAzure module found at $azureModulePath." -ForegroundColor Green
-}
-
-# Import the OrchestratorCommon module (which should load OrchestratorAzure)
-$modulePath = Join-Path -Path $PSScriptRoot -ChildPath "OrchestratorCommon.psd1"
+# Import the module
+$modulePath = Join-Path -Path $PSScriptRoot -ChildPath "OrchestratorAzure.psd1"
 Import-Module -Name $modulePath -Force
-Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
+Write-Host "OrchestratorAzure module imported successfully." -ForegroundColor Green
 
-# Show available functions in the OrchestratorCommon module
-# These should match the functions from OrchestratorAzure
-$moduleFunctions = Get-Command -Module OrchestratorCommon
-Write-Host "Available functions in OrchestratorCommon module:" -ForegroundColor Cyan
+# Show available functions in the module
+$moduleFunctions = Get-Command -Module OrchestratorAzure
+Write-Host "Available functions in OrchestratorAzure module:" -ForegroundColor Cyan
 $moduleFunctions | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Yellow }
-
-# Verify OrchestratorAzure was loaded and check its functions
-$azureModuleFunctions = Get-Command -Module OrchestratorAzure
-if ($azureModuleFunctions) {
-    Write-Host "OrchestratorAzure module was successfully loaded by OrchestratorCommon." -ForegroundColor Green
-    Write-Host "Functions in OrchestratorAzure module:" -ForegroundColor Cyan
-    $azureModuleFunctions | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Yellow }
-}
-else {
-    Write-Warning "OrchestratorAzure module was not loaded properly."
-}
 
 # Test the functions if environment config is available
 $envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\..\environments\dev.json"
