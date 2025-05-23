@@ -10,12 +10,21 @@ function Get-PATFromKeyVault {
         [string]$SubscriptionId
     )
 
-    # Login to Azure with tenant and subscription (if not already logged in)
-    Connect-AzAccount -TenantId $TenantId -SubscriptionId $SubscriptionId -ErrorAction Stop
+    # Check if already connected to Azure
+    $context = Get-AzContext
+    if (-not $context -or $context.Tenant.Id -ne $TenantId -or $context.Subscription.Id -ne $SubscriptionId) {
+        Write-Host "Connecting to Azure with Tenant ID: $TenantId and Subscription ID: $SubscriptionId" -ForegroundColor Cyan
+        Connect-AzAccount -TenantId $TenantId -SubscriptionId $SubscriptionId -ErrorAction Stop
+    } else {
+        Write-Host "Already connected to Azure with appropriate Tenant and Subscription" -ForegroundColor Green
+    }
 
     # Retrieve the secret from Azure Key Vault
     $secret = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -ErrorAction Stop
-    return $secret.SecretValueText
+    
+    # Convert secure string to plain text
+    $secretValueText = $secret.SecretValue | ConvertFrom-SecureString -AsPlainText
+    return $secretValueText
 }
 
 # Define variables
