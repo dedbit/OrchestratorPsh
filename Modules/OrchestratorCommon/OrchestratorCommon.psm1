@@ -1,22 +1,26 @@
 # OrchestratorCommon.psm1
 # Module for common functions used across OrchestratorPsh scripts
 
-# Function to retrieve the Personal Access Token (PAT) from Azure Key Vault
-function Get-PATFromKeyVault {
+# Function to connect to Azure with the specified tenant and subscription
+function Connect-ToAzure {
+    [CmdletBinding()]
     param (
-        [string]$KeyVaultName,
-        [string]$SecretName,
+        [Parameter(Mandatory = $true)]
         [string]$TenantId,
+        
+        [Parameter(Mandatory = $true)]
         [string]$SubscriptionId,
+        
+        [Parameter(Mandatory = $false)]
         [switch]$ForceNewLogin
     )
-
+    
     try {
         # Check if already connected to Azure with correct tenant and subscription
         $context = Get-AzContext
         $needsLogin = $ForceNewLogin -or (-not $context) -or 
-                     ($context.Tenant.Id -ne $TenantId) -or 
-                     ($context.Subscription.Id -ne $SubscriptionId)
+                      ($context.Tenant.Id -ne $TenantId) -or 
+                      ($context.Subscription.Id -ne $SubscriptionId)
         
         if ($needsLogin) {
             Write-Host "Connecting to Azure with Tenant ID: $TenantId and Subscription ID: $SubscriptionId" -ForegroundColor Cyan
@@ -30,6 +34,31 @@ function Get-PATFromKeyVault {
             Connect-AzAccount -TenantId $TenantId -SubscriptionId $SubscriptionId -ErrorAction Stop
         } else {
             Write-Host "Already connected to Azure with appropriate Tenant and Subscription" -ForegroundColor Green
+        }
+        
+        return $true
+    }
+    catch {
+        Write-Error "Error connecting to Azure: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+# Function to retrieve the Personal Access Token (PAT) from Azure Key Vault
+function Get-PATFromKeyVault {
+    param (
+        [string]$KeyVaultName,
+        [string]$SecretName,
+        [string]$TenantId,
+        [string]$SubscriptionId,
+        [switch]$ForceNewLogin
+    )
+
+    try {
+        # Connect to Azure using the extracted connection function
+        $connected = Connect-ToAzure -TenantId $TenantId -SubscriptionId $SubscriptionId -ForceNewLogin:$ForceNewLogin
+        if (-not $connected) {
+            throw "Failed to connect to Azure"
         }
 
         # Retrieve the secret from Azure Key Vault
@@ -69,4 +98,4 @@ function Get-PATFromKeyVault {
 }
 
 # Export the functions
-Export-ModuleMember -Function Get-PATFromKeyVault
+Export-ModuleMember -Function Get-PATFromKeyVault, Connect-ToAzure

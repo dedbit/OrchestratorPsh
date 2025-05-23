@@ -11,11 +11,9 @@ $moduleFunctions = Get-Command -Module OrchestratorCommon
 Write-Host "Available functions in OrchestratorCommon module:" -ForegroundColor Cyan
 $moduleFunctions | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Yellow }
 
-# Test Get-PATFromKeyVault if environment config is available
+# Test the functions if environment config is available
 $envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\..\environments\dev.json"
 if (Test-Path $envConfigPath) {
-    Write-Host "`nFound environment config. Testing Get-PATFromKeyVault function..." -ForegroundColor Cyan
-    
     # Load environment config
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $KeyVaultName = $envConfig.keyVaultName
@@ -26,7 +24,17 @@ if (Test-Path $envConfigPath) {
     Write-Host "Using Tenant ID: $TenantId" -ForegroundColor Cyan
     Write-Host "Using Subscription ID: $SubscriptionId" -ForegroundColor Cyan
     
-    # Test the function
+    # Test Connect-ToAzure function
+    Write-Host "`nTesting Connect-ToAzure function..." -ForegroundColor Cyan
+    $connected = Connect-ToAzure -TenantId $TenantId -SubscriptionId $SubscriptionId
+    if ($connected) {
+        Write-Host "Connection successful!" -ForegroundColor Green
+    } else {
+        Write-Host "Connection failed!" -ForegroundColor Red
+    }
+    
+    # Test Get-PATFromKeyVault function
+    Write-Host "`nTesting Get-PATFromKeyVault function..." -ForegroundColor Cyan
     try {
         $SecretName = "PAT"
         $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
