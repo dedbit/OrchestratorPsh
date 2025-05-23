@@ -1,8 +1,24 @@
 # Test-Module.ps1
 # Script to test the OrchestratorAzure module functionality
 
+# Handle cases where $PSScriptRoot might be empty (when code is pasted into terminal)
+$scriptRoot = if ($PSScriptRoot) { 
+    $PSScriptRoot 
+} else { 
+    # Try to determine the location based on the current path
+    $currentPath = Get-Location
+    if ((Split-Path -Leaf $currentPath) -eq "OrchestratorAzure") {
+        $currentPath.Path
+    } elseif (Test-Path (Join-Path -Path $currentPath -ChildPath "Modules\OrchestratorAzure")) {
+        Join-Path -Path $currentPath -ChildPath "Modules\OrchestratorAzure"
+    } else {
+        Write-Warning "Could not determine script location. Using current directory."
+        $currentPath.Path
+    }
+}
+
 # Import the module
-$modulePath = Join-Path -Path $PSScriptRoot -ChildPath "OrchestratorAzure.psd1"
+$modulePath = Join-Path -Path $scriptRoot -ChildPath "OrchestratorAzure.psd1"
 Import-Module -Name $modulePath -Force
 Write-Host "OrchestratorAzure module imported successfully." -ForegroundColor Green
 
@@ -12,7 +28,7 @@ Write-Host "Available functions in OrchestratorAzure module:" -ForegroundColor C
 $moduleFunctions | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Yellow }
 
 # Test the functions if environment config is available
-$envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\..\environments\dev.json"
+$envConfigPath = Join-Path -Path $scriptRoot -ChildPath "..\..\environments\dev.json"
 if (Test-Path $envConfigPath) {
     # Load environment config
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
