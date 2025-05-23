@@ -1,52 +1,18 @@
 # Import the Az module to interact with Azure services
 Import-Module Az
 
-# Function to retrieve the Personal Access Token (PAT) from Azure Key Vault
-function Get-PATFromKeyVault {
-    param (
-        [string]$KeyVaultName,
-        [string]$SecretName,
-        [string]$TenantId,
-        [string]$SubscriptionId
-    )
-
-    # Check if already connected to Azure
-    $context = Get-AzContext
-    if (-not $context -or $context.Tenant.Id -ne $TenantId -or $context.Subscription.Id -ne $SubscriptionId) {
-        Write-Host "Connecting to Azure with Tenant ID: $TenantId and Subscription ID: $SubscriptionId" -ForegroundColor Cyan
-        Connect-AzAccount -TenantId $TenantId -SubscriptionId $SubscriptionId -ErrorAction Stop
-    } else {
-        Write-Host "Already connected to Azure with appropriate Tenant and Subscription" -ForegroundColor Green
-    }
-
-    # Retrieve the secret from Azure Key Vault
-    $secret = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -ErrorAction Stop
-    
-    # Extract the secret value properly - handle different possible formats
-    try {
-        # First try the newer way (SecretValue as SecureString)
-        if ($secret.SecretValue -is [System.Security.SecureString]) {
-            $secretValueText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
-                [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret.SecretValue))
-        }
-        # Then try direct text (older versions)
-        elseif ($null -ne $secret.SecretValueText) {
-            $secretValueText = $secret.SecretValueText
-        }
-        else {
-            throw "Could not extract secret value using known methods."
-        }
-    }
-    catch {
-        Write-Error "Error extracting secret value: $($_.Exception.Message)"
-        throw
-    }
-    
-    return $secretValueText
+# Import OrchestratorCommon module
+$moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
+if (Test-Path $moduleRoot) {
+    Import-Module $moduleRoot -Force
+    Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
+} else {
+    Write-Error "OrchestratorCommon module not found at $moduleRoot. Make sure the module is installed correctly."
+    exit 1
 }
 
 # Define variables
-$envConfigPath = "..\environments\dev.json"
+$envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\environments\dev.json"
 if (Test-Path $envConfigPath) {
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $KeyVaultName = $envConfig.keyVaultName
