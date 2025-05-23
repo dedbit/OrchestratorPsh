@@ -2,14 +2,15 @@
 # Module for configuration-related functions used across OrchestratorPsh scripts
 
 # Function to connect to 12Configuration
-function Connect-12Configuration {
+function Initialize-12Configuration {
     [CmdletBinding()]
     param (
         # Parameters can be added here in the future
     )
     
     # Correct the relative path to the configuration file
-    $configFilePath = Join-Path -Path (Split-Path -Path (Get-PSCommandPath) -Parent) -ChildPath "..\..\environments\dev.json"
+    $configFilePath = Join-Path -Path (Split-Path -Path (Get-PSCommandPath) -Parent) -ChildPath "..\environments\dev.json"
+    # ls $configFilePath
 
     try {
         # Check if the configuration file exists
@@ -21,7 +22,7 @@ function Connect-12Configuration {
         $configContent = Get-Content -Path $configFilePath -Raw | ConvertFrom-Json
 
         # Store the configuration in a global variable
-        $Global:Configuration = $configContent
+        $Global:12cConfig = $configContent
 
         Write-Host "Configuration loaded successfully and stored in global variable." -ForegroundColor Green
     } catch {
@@ -36,7 +37,7 @@ function Get-PSCommandPath {
 
     try {
         # Determine the command path
-        if ($null -ne $PSCommandPath) {
+        if ( -not [string]::IsNullOrEmpty($PSCommandPath)) {
             # If running in a script, use $PSCommandPath
             return $PSCommandPath
         } else {
