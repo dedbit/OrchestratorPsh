@@ -7,13 +7,19 @@ $modulePath = Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path -Pa
 # Import the module
 Import-Module -Name $modulePath -Force
 
-# Test Connect-12Configuration
-Write-Host "Testing Connect-12Configuration..." -ForegroundColor Cyan
+# Test Initialize-12Configuration
+Write-Host "Testing Initialize-12Configuration..." -ForegroundColor Cyan
 try {
-    Connect-12Configuration
-    Write-Host "Connect-12Configuration executed successfully." -ForegroundColor Green
+    # Test with default path
+    Initialize-12Configuration
+    Write-Host "Initialize-12Configuration executed successfully with default path." -ForegroundColor Green
+
+    # Test with custom path
+    $customPath = Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path -Parent) -ChildPath "..\..\environments\dev.json"
+    Initialize-12Configuration -ConfigFilePathOverride $customPath
+    Write-Host "Initialize-12Configuration executed successfully with custom path." -ForegroundColor Green
 } catch {
-    Write-Error "Connect-12Configuration test failed: $($_.Exception.Message)"
+    Write-Error "Initialize-12Configuration test failed: $($_.Exception.Message)"
 }
 
 # Test Get-PSCommandPath

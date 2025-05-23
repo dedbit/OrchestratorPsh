@@ -5,11 +5,16 @@
 function Initialize-12Configuration {
     [CmdletBinding()]
     param (
-        # Parameters can be added here in the future
+        [Parameter(Mandatory = $false)]
+        [string]$ConfigFilePathOverride
     )
-    
-    # Correct the relative path to the configuration file
-    $configFilePath = Join-Path -Path (Split-Path -Path (Get-PSCommandPath) -Parent) -ChildPath "..\environments\dev.json"
+
+    # Determine the configuration file path
+    $configFilePath = if ($null -ne $ConfigFilePathOverride -and (Test-Path -Path $ConfigFilePathOverride)) {
+        $ConfigFilePathOverride
+    } else {
+        Join-Path -Path (Split-Path -Path (Get-PSCommandPath) -Parent) -ChildPath "..\..\environments\dev.json"
+    }
     # ls $configFilePath
 
     try {
@@ -51,4 +56,4 @@ function Get-PSCommandPath {
 }
 
 # Export the functions
-Export-ModuleMember -Function Connect-12Configuration, Get-PSCommandPath
+Export-ModuleMember -Function Initialize-12Configuration, Get-PSCommandPath
