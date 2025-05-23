@@ -1,7 +1,11 @@
+General guidance:
 - Focus on just requested change. 
 - Make as minimal changes as possible. 
 - If you see things that would be nice to implement, suggest them to me. Dont just make the changes. 
 - Ask questions if anything is unclear. 
+
+Powershell guidance:
+- Avoid having multiple consecutive lines of Write-Host. Instead combine them into one Write-host statement. 
 
 Readme.md file should contain following information:
 - Only include elements that are clearly included in the repository or requested directly in prompt. 
