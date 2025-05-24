@@ -25,6 +25,6 @@ catch {
 }
 
 # Export all functions from the OrchestratorAzure module 
-# This ensures that functions like Get-PATFromKeyVault and Connect-ToAzure
+# This ensures that functions like Get-PATFromKeyVault and Connect-12Azure
 # are available to any script that imports OrchestratorCommon
 Export-ModuleMember -Function (Get-Command -Module OrchestratorAzure).Name
