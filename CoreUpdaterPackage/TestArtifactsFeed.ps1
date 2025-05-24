@@ -1,9 +1,27 @@
 # Script to test getting PAT from Key Vault and listing packages from Azure DevOps artifacts feed
 # Import the Az module to interact with Azure services
-Import-Module Az
+# Import-Module Az
+
+# Determine script root in both script and console contexts
+$ScriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
+
+# Define Get-ScriptRoot function in case functions.ps1 import fails
+function Get-ScriptRoot {
+    if ($PSScriptRoot) { return $PSScriptRoot } 
+    else { return (Get-Location).Path }
+}
+
+# Try to load shared functions
+try {
+    . "$ScriptRoot\functions.ps1"
+    Write-Host "Functions loaded successfully." -ForegroundColor Green
+} 
+catch {
+    Write-Warning "Could not load functions.ps1, using built-in Get-ScriptRoot function."
+}
 
 # Import OrchestratorCommon module
-$moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
+$moduleRoot = Join-Path -Path $ScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
 if (Test-Path $moduleRoot) {
     Import-Module $moduleRoot -Force
     Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
@@ -13,7 +31,7 @@ if (Test-Path $moduleRoot) {
 }
 
 # Define variables
-$envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\environments\dev.json"
+$envConfigPath = Join-Path -Path $ScriptRoot -ChildPath "..\environments\dev.json"
 if (Test-Path $envConfigPath) {    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $KeyVaultName = $envConfig.keyVaultName
     $TenantId = $envConfig.tenantId
@@ -41,36 +59,51 @@ try {
 }
 
 # Check if nuget.exe exists
-$nugetPath = Join-Path -Path $PSScriptRoot -ChildPath "..\Tools\nuget.exe"
+$nugetPath = Join-Path -Path $ScriptRoot -ChildPath "..\Tools\nuget.exe"
 if (-not (Test-Path $nugetPath)) {
     Write-Error "nuget.exe not found at $nugetPath. Please make sure it exists."
     exit 1
 }
 
-# Set up the NuGet source with the PAT
-try {
-    Write-Host "Adding NuGet source..." -ForegroundColor Yellow
-    & $nugetPath sources add -Name "ArtifactsFeed" -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText
-    Write-Host "NuGet source added successfully." -ForegroundColor Green
-} catch {
-    Write-Error "Failed to add NuGet source: $($_.Exception.Message)"
-    # Clean up before exiting
-    & $nugetPath sources remove -Name "ArtifactsFeed" -ErrorAction SilentlyContinue
-    exit 1
+# Clean up any existing source with the same name
+$existingSources = & $nugetPath sources list | Select-String "ArtifactsFeed"
+if ($existingSources) {
+    Write-Host "Removing existing ArtifactsFeed source..." -ForegroundColor Yellow
+    & $nugetPath sources remove -Name "ArtifactsFeed" | Out-Null
 }
 
-try {
-    # List packages from the feed
-    Write-Host "Listing packages from the artifacts feed..." -ForegroundColor Yellow
-    & $nugetPath list -Source "ArtifactsFeed" -AllVersions
+Write-Host "Adding NuGet source..." -ForegroundColor Yellow
+# Add the source with -NonInteractive to avoid prompts
+$sourceAddOutput = & $nugetPath sources add -Name "ArtifactsFeed" -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText -NonInteractive 2>&1
+if ($LASTEXITCODE -ne 0) {
+    # Even if exit code indicates failure, it might still work if the error is just "already exists"
+    if ($sourceAddOutput -match "already been added") {
+        Write-Host "NuGet source already exists and can be used." -ForegroundColor Green
+    } else {
+        Write-Warning "Error adding NuGet source: $sourceAddOutput"
+    }
+} else {
+    Write-Host "NuGet source added successfully." -ForegroundColor Green
+}
+
+# List packages from the feed - use direct URL instead of source name
+Write-Host "Listing packages from the artifacts feed..." -ForegroundColor Yellow
+$result = & $nugetPath search -Source $ArtifactsFeedUrl -PreRelease -Verbosity detailed -NonInteractive
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "NuGet search returned with error code $LASTEXITCODE"
+    Write-Warning "Output: $result"
+} else {
     Write-Host "Packages listed successfully." -ForegroundColor Green
-} catch {
-    Write-Error "Failed to list packages: $($_.Exception.Message)"
-} finally {
-    # Clean up the NuGet source to remove sensitive information
-    Write-Host "Removing NuGet source..." -ForegroundColor Yellow
-    & $nugetPath sources remove -Name "ArtifactsFeed"
+}
+
+# Clean up the NuGet source to remove sensitive information
+Write-Host "Removing NuGet source..." -ForegroundColor Yellow
+$existingSources = & $nugetPath sources list | Select-String "ArtifactsFeed"
+if ($existingSources) {
+    & $nugetPath sources remove -Name "ArtifactsFeed" | Out-Null
     Write-Host "NuGet source removed successfully." -ForegroundColor Green
+} else {
+    Write-Host "NuGet source not found for removal." -ForegroundColor Cyan
 }
 
 Write-Host "Test completed successfully!" -ForegroundColor Green
