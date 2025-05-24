@@ -15,10 +15,10 @@ param subscriptionId string
 param location string = 'West Europe'
 
 // Object ID for Key Vault access policies
-param objectId string
+param ownerObjectId string
 
 // App ID for Key Vault access policies (from dev.json)
-param appId string
+param appObjectId string
 
 // Whether to create PAT secret with empty value - should be true only during initial deployment
 param createEmptyPat bool = false
@@ -37,14 +37,14 @@ resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 // We use a module because these resources need to be deployed at resource group scope
 // while the resource group itself needs to be deployed at subscription scope
 module keyVaultModule 'keyVault.bicep' = {
-  name: 'keyVaultDeployment'
+  name: 'keyVaultModule'
   scope: rg
   params: {
     keyVaultName: keyVaultName
     location: location
     tenantId: tenantId
-    objectId: objectId
-    appId: appId
+    ownerObjectId: ownerObjectId
+    appObjectId: appObjectId
     createEmptyPat: createEmptyPat
   }
 }
@@ -67,5 +67,6 @@ output deploymentOutputs object = {
   keyVaultName: keyVaultModule.outputs.keyVaultName
   storageAccountName: storageModule.outputs.storageAccountName
   patCreated: createEmptyPat  // Reference the parameter to avoid unused parameter warning
+  appId: appObjectId                // Reference the parameter to avoid unused parameter warning
 }
 

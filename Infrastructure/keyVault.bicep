@@ -10,8 +10,8 @@ targetScope = 'resourceGroup'
 param keyVaultName string
 param location string
 param tenantId string
-param objectId string
-param appId string // Added parameter for App ID from dev.json
+param ownerObjectId string
+param appObjectId string // Renamed parameter for App Object ID from dev.json
 
 // Define KeyVault
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
@@ -26,7 +26,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     accessPolicies: [
       {
         tenantId: tenantId
-        objectId: objectId
+        objectId: ownerObjectId
         permissions: {
           secrets: [
             'get'
@@ -38,7 +38,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       }
       {
         tenantId: tenantId
-        objectId: appId
+        objectId: appObjectId
         permissions: {
           secrets: [
             'get'
@@ -88,7 +88,7 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-
     accessPolicies: [
       {
         tenantId: tenantId
-        objectId: objectId
+        objectId: ownerObjectId
         permissions: {
           secrets: [
             'get'

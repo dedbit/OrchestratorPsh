@@ -20,20 +20,17 @@
     "location": {
       "value": "West Europe"
     },
-    "objectId": {
-      "value": "0addc15b-b5eb-4cd9-8f3b-85bff53d6517"
+    "ownerObjectId": {
+      "value": "b797b210-773e-4be2-b19b-d23738f920f0"
     },
     "storageAccountName": {
       "value": "orchestratorpshstorage"
     },
-    "appId": {
-      "value": "e7bb5312-8ca0-423b-8889-4b53b3f86355"
-    },
-    "createEmptyPat": {
-      "value": true
-    },
     "appObjectId": {
       "value": "aaf08dd4-f930-4ceb-8917-fabc274574fd"
+    },
+    "createEmptyPat": {
+      "value": false
     }
   }
 }

@@ -1,8 +1,10 @@
 General guidance:
 - Focus on just requested change. 
+- Continue to run tests and make changes iteratively until problem is solved. 
 - Make as minimal changes as possible. 
 - If you see things that would be nice to implement, suggest them to me. Dont just make the changes. 
 - Ask questions if anything is unclear. 
+- Use relative references to modules and resources. Use Get-ScriptRoot for building paths when possible. 
 
 Powershell guidance:
 - Avoid having multiple consecutive lines of Write-Host. Instead combine them into one Write-host statement. 

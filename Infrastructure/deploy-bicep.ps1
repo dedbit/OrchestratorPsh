@@ -16,19 +16,49 @@ Write-Host "Using GitHub repo URL: $env:GITHUB_REPO_URL"
 # Get the current user's context for Key Vault access policy
 $currentUser = Get-AzADUser -SignedIn
 $currentObjectId = $currentUser.Id
+Write-Host "Current object ID: $currentObjectId" -ForegroundColor Yellow
+
+# Import Get-ScriptRoot function from CoreUpdaterPackage\functions.ps1
+. "c:\dev\12C\OrchestratorPsh\CoreUpdaterPackage\functions.ps1"
+
+# Define root directory for the project
+$projectRootPath = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+if (-Not $projectRootPath) {
+    $projectRootPath = "c:\dev\12C\OrchestratorPsh"
+}
+
+# Ensure paths for sync-parameters.ps1 and main.parameters.json are correct
+$syncParametersPath = Join-Path -Path $PSScriptRoot -ChildPath "sync-parameters.ps1"
+$parameterFilePath = Join-Path -Path $PSScriptRoot -ChildPath "main.parameters.json"
 
 Write-Host "Using sync-parameters.ps1 to synchronize parameters..." -ForegroundColor Yellow
 # Call sync-parameters with Force parameter to update main.parameters.json from dev.json
 # The script already checks if environments/dev.json exists
-& ".\sync-parameters.ps1" -Force
+& $syncParametersPath -Force
+
+# Add a check to ensure main.parameters.json exists
+if (-Not (Test-Path -Path $parameterFilePath)) {
+    Write-Host "Error: Parameter file not found at $parameterFilePath" -ForegroundColor Red
+    exit 1
+}
 
 # Get the parameter file to update GitHub repo URL and ObjectID
-$parameterFilePath = "main.parameters.json"
 $parameterContent = Get-Content -Path $parameterFilePath -Raw | ConvertFrom-Json
 
 # Update non-environment specific values that sync-parameters doesn't handle
-$parameterContent.parameters.objectId.value = $currentObjectId
+if (-not $currentObjectId) {
+    Write-Host "Error: ownerObjectId (currentObjectId) could not be determined. Please ensure you are signed in with 'Connect-AzAccount' and have the correct context." -ForegroundColor Red
+    exit 1
+}
+$parameterContent.parameters.ownerObjectId.value = $currentObjectId
+Write-Host "Updated ownerObjectId in parameters file to: $currentObjectId" -ForegroundColor Green
+
 $parameterContent.parameters.githubRepoUrl.value = $env:GITHUB_REPO_URL
+
+
+
+# Remove unused variable warning
+$createEmptyPat = $false
 
 # Check if the PAT secret exists in Key Vault - we'll only create an empty PAT if it doesn't exist
 $keyVaultName = $parameterContent.parameters.keyVaultName.value
@@ -85,22 +115,17 @@ $deploymentName = "orchestratorPsh-deployment-$(Get-Date -Format 'yyyyMMddHHmmss
 
 # Show deployment parameters summary
 Write-Host "Deploying with the following parameters:" -ForegroundColor Green
-Write-Host "  Resource Group: $($parameterContent.parameters.resourceGroupName.value)" -ForegroundColor Cyan
-Write-Host "  Key Vault: $($parameterContent.parameters.keyVaultName.value)" -ForegroundColor Cyan
-Write-Host "  Location: $($parameterContent.parameters.location.value)" -ForegroundColor Cyan
-Write-Host "  GitHub Repo URL: $env:GITHUB_REPO_URL" -ForegroundColor Cyan
-Write-Host "  Tenant ID: $($parameterContent.parameters.tenantId.value)" -ForegroundColor Cyan
-Write-Host "  Subscription ID: $($parameterContent.parameters.subscriptionId.value)" -ForegroundColor Cyan
-Write-Host "  Object ID: $currentObjectId" -ForegroundColor Cyan
-Write-Host "  App ID: $($parameterContent.parameters.appId.value)" -ForegroundColor Cyan
-Write-Host "  Create Empty PAT: $($parameterContent.parameters.createEmptyPat.value)" -ForegroundColor Cyan
+Write-Host "  Resource Group: $($parameterContent.parameters.resourceGroupName.value)`n  Key Vault: $($parameterContent.parameters.keyVaultName.value)`n  Location: $($parameterContent.parameters.location.value)`n  GitHub Repo URL: $env:GITHUB_REPO_URL`n  Tenant ID: $($parameterContent.parameters.tenantId.value)`n  Subscription ID: $($parameterContent.parameters.subscriptionId.value)`n  Object ID: $($parameterContent.parameters.ownerObjectId.value)`n  App Object ID: $($parameterContent.parameters.appObjectId.value)`n  Create Empty PAT: $($parameterContent.parameters.createEmptyPat.value)" -ForegroundColor Cyan
 
 # Deploy the Bicep template at subscription level
 Write-Host "Deploying Bicep template at subscription level..." -ForegroundColor Green
+$templateFilePath = Join-Path -Path $PSScriptRoot -ChildPath "main.bicep"
+Write-Host "Using template file: $templateFilePath" -ForegroundColor Green
+Write-Host "Using parameter file: $parameterFilePath" -ForegroundColor Green
 New-AzSubscriptionDeployment `
     -Name $deploymentName `
     -Location $location `
-    -TemplateFile "main.bicep" `
+    -TemplateFile $templateFilePath `
     -TemplateParameterFile $parameterFilePath `
     -githubRepoUrl $env:GITHUB_REPO_URL `
     -createEmptyPat $createEmptyPat `
