@@ -5,7 +5,7 @@
     RootModule = 'MessagingModule.psm1'
     
     # Version number of this module
-    ModuleVersion = '1.0.5'
+    ModuleVersion = '1.0.6'
     
     # ID used to uniquely identify this module
     GUID = '4e211f77-cb00-4af0-9ffa-6b29aa5b4c1a'
@@ -54,5 +54,6 @@
         }
     }
 }
+
 
 

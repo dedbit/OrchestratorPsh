@@ -3,10 +3,10 @@
 
 @{
     # Script module or binary module file associated with this manifest
-    RootModule = 'Configuration.psm1'
+    RootModule = 'ConfigurationPackage.psm1'
 
     # Version number of this module
-    ModuleVersion = '1.0.1'
+    ModuleVersion = '1.0.3'
 
     # ID used to uniquely identify this module
     GUID = '12345678-1234-1234-1234-123456789abc'
@@ -27,7 +27,7 @@
     PowerShellVersion = '5.1'
 
     # Functions to export from this module
-    FunctionsToExport = @('Connect-12Configuration')
+    FunctionsToExport = @('Initialize-12Configuration', 'Get-PSCommandPath')
 
     # Cmdlets to export from this module
     CmdletsToExport = @()

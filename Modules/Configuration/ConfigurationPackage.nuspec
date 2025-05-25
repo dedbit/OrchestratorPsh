@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>ConfigurationPackage</id>
+    <version>1.0.12</version>
+    <authors>OrchestratorPsh Team</authors>
+    <owners>12C</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Module for configuration-related functions in OrchestratorPsh</description>
+    <releaseNotes>Initial release of the Configuration module.</releaseNotes>
+    <tags>Configuration OrchestratorPsh</tags>
+    <copyright>(c) 2025 OrchestratorPsh. All rights reserved.</copyright>
+  </metadata>
+  <files>
+    <file src="ConfigurationPackage.psd1" target="ConfigurationPackage" />
+    <file src="ConfigurationPackage.psm1" target="ConfigurationPackage" />
+    <file src="readme.md" target="ConfigurationPackage" />
+  </files>
+</package>
+
+
+
+
+
+
+
+
+
+

@@ -1,7 +1,10 @@
 # Run script checks of the latest version of the packages in packages.json are installed, and installs them locally.
+# Todo
+# Use Get-ScriptRoot to get path
+# Certificate based authentication to Artifacts feed
 
 # Import the Az module to interact with Azure services
-Import-Module Az
+# Import-Module Az
 
 # Import OrchestratorCommon module
 $moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"

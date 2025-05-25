@@ -23,6 +23,9 @@ if (-not (Get-Module -ListAvailable Az)) {
 
 ## Todo
 
+Setup modules/configuration module same as messaging. 
+
+
 4. **Develop Updater Script**
     - Authenticate with certificate.
     - Fetch secrets (PAT, package list).
