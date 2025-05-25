@@ -1,35 +1,59 @@
-# Install Configuration module for all users
+# ConfigurationPackage Module
 
-# Setup local feed
+A PowerShell module for managing configuration in the OrchestratorPsh ecosystem.
 
-# Register local NuGet repository (run once)
-Register-PSRepository -Name LocalNuget -SourceLocation "$PWD\Output" -InstallationPolicy Trusted
-# Install the Configuration package for all users
-Install-Module -Name ConfigurationPackage -Scope AllUsers -Repository LocalNuget -Force
+For detailed architecture information, see [Architecture.md](./Architecture.md).
 
-"$($pwd)\output"
+## Installation Options
 
-
-
-
+### Option 1: Install from local NuGet feed (recommended)
 
 ```powershell
-# Option 1: Install from local NuGet package (recommended for built packages)
-Install-Module -Name ConfigurationPackage -Scope AllUsers -Repository LocalNuget -Force -SourcePath ..\..\Output
+# Register local NuGet repository (run once)
+Register-PSRepository -Name LocalNuget -SourceLocation "C:\dev\12C\OrchestratorPsh\Output" -InstallationPolicy Trusted
 
-# Option 2: Manually copy to system modules folder
-Copy-Item -Recurse -Force .\Modules\Configuration "C:\Program Files\PowerShell\Modules\Configuration"
-
-# Option 3: Import directly from source (for development)
-Import-Module .\Modules\Configuration\Configuration.psd1 -Force
+# Install the Configuration package for all users
+Install-Module -Name ConfigurationPackage -Scope AllUsers -Repository LocalNuget -Force
 ```
 
-# Import new version
-Remove-Module Configuration
-Import-Module Configuration
-Get-Command -Module Configuration
+### Option 2: Import directly from source (for development)
 
+```powershell
+# Import the module directly from source
+Import-Module -Path "C:\dev\12C\OrchestratorPsh\Modules\Configuration\ConfigurationPackage.psd1" -Force
+```
 
-# package management
+### Option 3: Manually copy to system modules folder
+
+```powershell
+# Copy to PowerShell modules directory
+Copy-Item -Recurse -Force "C:\dev\12C\OrchestratorPsh\Modules\Configuration" "C:\Program Files\PowerShell\Modules\ConfigurationPackage"
+```
+
+## Usage
+
+```powershell
+# Import the module (if not already imported)
+Import-Module -Name ConfigurationPackage
+
+# Get all commands in the module
+Get-Command -Module ConfigurationPackage
+
+# Use functions from the module
+Initialize-12Configuration
+$commandPath = Get-PSCommandPath
+```
+
+## Managing Package Versions
+
+```powershell
+# Find available module versions
 Find-Module -Name ConfigurationPackage -Repository LocalNuget
-Install-Module -Name ConfigurationPackage -Scope AllUsers -Repository LocalNuget -Force
+
+# Update to the latest version
+Update-Module -Name ConfigurationPackage -Force
+
+# Remove and reimport the module after updates
+Remove-Module -Name ConfigurationPackage -ErrorAction SilentlyContinue
+Import-Module -Name ConfigurationPackage
+```

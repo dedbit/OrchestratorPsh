@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>ConfigurationPackage</id>
-    <version>1.0.13</version>
+    <version>1.0.14</version>
     <authors>OrchestratorPsh Team</authors>
     <owners>12C</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -17,6 +17,7 @@
     <file src="readme.md" target="ConfigurationPackage" />
   </files>
 </package>
+
 
 
 
