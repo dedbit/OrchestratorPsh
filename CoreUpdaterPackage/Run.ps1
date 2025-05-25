@@ -6,8 +6,10 @@
 # Import the Az module to interact with Azure services
 # Import-Module Az
 
+. .\functions.ps1
+
 # Import OrchestratorCommon module
-$moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
+$moduleRoot = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Modules\OrchestratorCommon"
 if (Test-Path $moduleRoot) {
     Import-Module $moduleRoot -Force
     Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
@@ -17,10 +19,10 @@ if (Test-Path $moduleRoot) {
 }
 
 # Define file paths and variables
-$envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\environments\dev.json"
-$packagesJsonPath = Join-Path -Path $PSScriptRoot -ChildPath "packages.json"
-$localPackagesDir = Join-Path -Path $PSScriptRoot -ChildPath "..\Packages"
-$nugetPath = Join-Path -Path $PSScriptRoot -ChildPath "..\Tools\nuget.exe"
+$envConfigPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\environments\dev.json"
+$packagesJsonPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "packages.json"
+$localPackagesDir = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Packages"
+$nugetPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Tools\nuget.exe"
 
 # Check if nuget.exe exists
 if (-not (Test-Path $nugetPath)) {
@@ -49,7 +51,7 @@ if (Test-Path $envConfigPath) {
 
 # Load packages list
 if (Test-Path $packagesJsonPath) {
-    $packagesList = Get-Content -Path $packagesJsonPath -Raw | ConvertFrom-Json
+    $packagesList = @(Get-Content -Path $packagesJsonPath -Raw | ConvertFrom-Json)
     Write-Host "Found $(($packagesList | Measure-Object).Count) packages in packages.json" -ForegroundColor Cyan
 } else {
     Write-Error "Could not find packages.json at $packagesJsonPath. Aborting script."
@@ -68,9 +70,10 @@ try {
 }
 
 # Set up the NuGet source with the PAT
-$nugetSourceName = "ArtifactsFeed"
+$nugetSourceName = "OrchestratorPsh"
 try {
     Write-Host "Adding NuGet source..." -ForegroundColor Yellow
+    # & $nugetPath source list 
     & $nugetPath sources add -Name $nugetSourceName -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText
     Write-Host "NuGet source added successfully." -ForegroundColor Green
 } catch {
@@ -83,17 +86,18 @@ try {
     foreach ($packageName in $packagesList) {
         Write-Host "`nChecking package: $packageName" -ForegroundColor Cyan
         
-        # Get the latest version from the feed
+        # Get the latest version from the feed (robust version handling)
         Write-Host "  Fetching latest version from feed..." -ForegroundColor Yellow
-        $latestVersionInfo = & $nugetPath list $packageName -Source $nugetSourceName -AllVersions | Where-Object { $_ -match $packageName }
+        $versionLines = & $nugetPath list $packageName -Source $nugetSourceName -AllVersions | Where-Object { $_ -match "^$packageName\s+\d+\.\d+\.\d+" }
         
-        if (-not $latestVersionInfo) {
+        if (-not $versionLines) {
             Write-Warning "  Package $packageName not found in the feed. Skipping."
             continue
         }
         
-        # Parse version from the result (format: "PackageName 1.0.0")
-        $latestVersion = ($latestVersionInfo -split ' ')[1]
+        # Extract version numbers and sort them
+        $versions = $versionLines | ForEach-Object { ($_ -split '\s+')[1] }
+        $latestVersion = $versions | Sort-Object {[version]$_} -Descending | Select-Object -First 1
         Write-Host "  Latest version available: $latestVersion" -ForegroundColor Green
         
         # Check if the package is already installed
@@ -123,4 +127,4 @@ try {
     Write-Host "NuGet source removed successfully." -ForegroundColor Green
 }
 
-Write-Host "`nPackage check and installation completed." -ForegroundColor Green 
+Write-Host "`nPackage check and installation completed." -ForegroundColor Green

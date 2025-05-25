@@ -63,12 +63,21 @@ Setup modules/configuration module same as messaging.
 
 1. **Store Secrets in Azure Key Vault**
     - Add the PAT and package list JSON as secrets.
-    Done.
+    - Done.
 
 2. **Create Azure AD App Registration**
     - Register an app and upload the certificate for authentication.
-    Done. AppId is found in environments/dev.json.
+    - Done. AppId is found in environments/dev.json.
 
 3. **Install Certificate on Target Machine**
     - Import the private key used for authentication.
-    Done. Storing certificate in Azure Key Vault. Installed on fm personal certs.
+    - Done. Storing certificate in Azure Key Vault. Installed on fm personal certs.
+
+4. **Set up Modules/Configuration Module**
+    - Created the NuGet package specification and build/publish scripts
+    - Fixed module import and testing capabilities
+    - Aligned module naming and directory structure
+    - Added proper documentation for installation and usage
+    - Implemented comprehensive test suite for module validation
+    - Added Architecture.md with module design and usage documentation
+    - Done.

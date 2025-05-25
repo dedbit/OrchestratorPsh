@@ -2,7 +2,7 @@
 # Script to publish the messaging package to a NuGet feed
 
 # Import the Az module to interact with Azure services
-Import-Module Az
+# Import-Module Az
 
 # Import OrchestratorCommon module
 $moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
@@ -60,16 +60,19 @@ Write-Host "Publishing package $PackagePath..." -ForegroundColor Cyan
 # Retrieve the PAT securely
 $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
 
+# Set the NuGet source name
+$ArtifactsFeed = "OrchestratorPsh"
+
 # Set up the NuGet source with the PAT
 Write-Host "Adding NuGet source..." -ForegroundColor Cyan
-nuget sources add -Name "ArtifactsFeed" -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText
+nuget sources add -Name $ArtifactsFeed -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText
 
 # Publish the package
 Write-Host "Pushing package to feed..." -ForegroundColor Cyan
-nuget push $PackagePath -Source "ArtifactsFeed" -ApiKey "AzureDevOps"
+nuget push $PackagePath -Source $ArtifactsFeed -ApiKey "AzureDevOps"
 
 # Clean up the NuGet source to remove sensitive information
 Write-Host "Cleaning up..." -ForegroundColor Cyan
-nuget sources remove -Name "ArtifactsFeed"
+nuget sources remove -Name $ArtifactsFeed
 
 Write-Host "Package published successfully!" -ForegroundColor Green
