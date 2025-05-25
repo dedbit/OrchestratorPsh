@@ -57,7 +57,8 @@ Install-Module MessagingModule
 Install-Module MessagingModule -Repository OrchestratorPshRepo
 
 
-## psh 7 using v2 feed worked
+## psh 7 using v2 feed worked. 
+# Also works in pwsh 5.1
 $SecurePAT = ConvertTo-SecureString $PersonalAccessToken -AsPlainText -Force
 $Cred = New-Object System.Management.Automation.PSCredential('AzureDevOps', $SecurePAT)
 Install-Module -Name MessagingModule -Repository 'OrchestratorPshRepo' -Credential $Cred
