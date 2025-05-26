@@ -1,4 +1,5 @@
 # Run script checks of the latest version of the packages in packages.json are installed, and installs them locally.
+# This script is like Run.ps1, but is being setup to use PSRepository for installing packages. 
 # Todo
 # Certificate based authentication to Artifacts feed
 # Move ensuring repository to a function
@@ -23,38 +24,22 @@ if (Test-Path $moduleRoot) {
     exit 1
 }
 
-# Define file paths and variables
-$envConfigPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\environments\dev.json"
-$packagesJsonPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "packages.json"
-$localPackagesDir = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Packages"
-$nugetPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Tools\nuget.exe"
-
-# Check if nuget.exe exists
-if (-not (Test-Path $nugetPath)) {
-    Write-Error "nuget.exe not found at $nugetPath. Please make sure it exists."
-    exit 1
-}
-
-# Ensure local packages directory exists
-if (-not (Test-Path $localPackagesDir)) {
-    Write-Host "Creating local packages directory at $localPackagesDir"
-    New-Item -ItemType Directory -Path $localPackagesDir -Force | Out-Null
-}
-
 # Load environment config
+$envConfigPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\environments\dev.json"
 if (Test-Path $envConfigPath) {
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
-    $KeyVaultName = $envConfig.keyVaultName
-    $TenantId = $envConfig.tenantId
-    $SubscriptionId = $envConfig.subscriptionId
-    $ArtifactsFeedUrl = $envConfig.artifactsFeedUrl
-    Write-Host "Using Key Vault: $KeyVaultName`nUsing Tenant ID: $TenantId`nUsing Subscription ID: $SubscriptionId`nUsing Artifacts Feed URL: $ArtifactsFeedUrl" -ForegroundColor Cyan
+    $ArtifactsFeedUrlV2 = $envConfig.artifactsFeedUrlV2
 } else {
     Write-Error "Could not find environment config at $envConfigPath. Aborting script."
     exit 1
 }
 
+# Ensure PSRepository is set up
+Ensure-12PsRepository
+$repoName = 'OrchestratorPshRepo22'
+
 # Load packages list
+$packagesJsonPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "packages.json"
 if (Test-Path $packagesJsonPath) {
     $packagesList = @(Get-Content -Path $packagesJsonPath -Raw | ConvertFrom-Json)
     Write-Host "Found $(($packagesList | Measure-Object).Count) packages in packages.json" -ForegroundColor Cyan
@@ -63,78 +48,25 @@ if (Test-Path $packagesJsonPath) {
     exit 1
 }
 
-# Retrieve the PAT securely
 try {
-    Write-Host "Retrieving PAT from Key Vault..." -ForegroundColor Yellow
-    $SecretName = "PAT" # Name of the secret storing the PAT
-    $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
-    Write-Host "PAT retrieved successfully!" -ForegroundColor Green
-} catch {
-    Write-Error "Failed to retrieve PAT: $($_.Exception.Message)"
-    exit 1
-}
-
-# Set up the NuGet source with the PAT
-$nugetSourceName = "OrchestratorPsh"
-try {
-    Write-Host "Adding NuGet source..." -ForegroundColor Yellow
-    # & $nugetPath source list 
-    & $nugetPath sources add -Name $nugetSourceName -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText
-    Write-Host "NuGet source added successfully." -ForegroundColor Green
-} catch {
-    Write-Error "Failed to add NuGet source: $($_.Exception.Message)"
-    exit 1
-}
-
-
-# . .\functions.ps1
-Ensure-12PsRepository
-
-
-try {
-    # Process each package in the list
     foreach ($packageName in $packagesList) {
-        Write-Host "`nChecking package: $packageName" -ForegroundColor Cyan
-        
-        # Get the latest version from the feed (robust version handling)
-        Write-Host "  Fetching latest version from feed..." -ForegroundColor Yellow
-        $versionLines = & $nugetPath list $packageName -Source $nugetSourceName -AllVersions | Where-Object { $_ -match "^$packageName\s+\d+\.\d+\.\d+" }
-        
-        if (-not $versionLines) {
-            Write-Warning "  Package $packageName not found in the feed. Skipping."
-            continue
-        }
-        
-        # Extract version numbers and sort them
-        $versions = $versionLines | ForEach-Object { ($_ -split '\s+')[1] }
-        $latestVersion = $versions | Sort-Object {[version]$_} -Descending | Select-Object -First 1
-        Write-Host "  Latest version available: $latestVersion" -ForegroundColor Green
-        
-        # Check if the package is already installed
-        $installedPackagePath = Join-Path -Path $localPackagesDir -ChildPath "$packageName.$latestVersion"
-        $isInstalled = Test-Path $installedPackagePath
-        
-        if ($isInstalled) {
-            Write-Host "  Package $packageName version $latestVersion is already installed." -ForegroundColor Green
+        Write-Host "\nChecking package: $packageName" -ForegroundColor Cyan
+        $installed = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
+        if ($installed) {
+            Write-Host "  Package $packageName version $($installed.Version) is already installed." -ForegroundColor Green
         } else {
-            # Install the package
-            Write-Host "  Installing $packageName version $latestVersion..." -ForegroundColor Yellow
-            & $nugetPath install $packageName -Version $latestVersion -Source $nugetSourceName -OutputDirectory $localPackagesDir -NoCache
-            
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "  Package $packageName version $latestVersion installed successfully." -ForegroundColor Green
+            Write-Host "  Installing $packageName from $repoName..." -ForegroundColor Yellow
+            Install-Module -Name $packageName -Repository $repoName -Force
+            $installed2 = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
+            if ($installed2) {
+                Write-Host "  Package $packageName version $($installed2.Version) installed successfully." -ForegroundColor Green
             } else {
-                Write-Error "  Failed to install package $packageName version $latestVersion."
+                Write-Error "  Failed to install package $packageName from $repoName."
             }
         }
     }
 } catch {
     Write-Error "Error processing packages: $($_.Exception.Message)"
-} finally {
-    # Clean up the NuGet source to remove sensitive information
-    Write-Host "`nRemoving NuGet source..." -ForegroundColor Yellow
-    & $nugetPath sources remove -Name $nugetSourceName
-    Write-Host "NuGet source removed successfully." -ForegroundColor Green
 }
 
-Write-Host "`nPackage check and installation completed." -ForegroundColor Green
+Write-Host "\nPackage check and installation completed." -ForegroundColor Green
