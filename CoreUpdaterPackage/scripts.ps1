@@ -117,8 +117,11 @@ Publish-Module -Path "C:\dev\12C\OrchestratorPsh\messaging\MessagingModule\" -Re
 
 # Install module
 Uninstall-Module MessagingModule
-Install-Module -Name MessagingModule -Repository 'OrchestratorPshRepo22' -Credential $Cred -Force
-Install-Module -Name MessagingModule -Scope AllUsers -Repository 'OrchestratorPshRepo22' -Credential $Cred
+# Install-Module -Name MessagingModule -Repository 'OrchestratorPshRepo22' -Credential $Cred -Force
+# Install-Module -Name MessagingModule -Scope AllUsers -Repository 'OrchestratorPshRepo22' -Credential $Cred
+Install-Module -Name MessagingModule -Repository 'OrchestratorPshRepo22'
+Install-Module -Name MessagingModule -Scope AllUsers -Repository 'OrchestratorPshRepo22' 
+Get-InstalledModule MessagingModule 
 Get-InstalledModule MessagingModule |fl
 
 # Import module
