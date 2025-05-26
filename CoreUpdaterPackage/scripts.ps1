@@ -12,6 +12,39 @@ $SecurePAT = ConvertTo-SecureString $PersonalAccessToken -AsPlainText -Force
 $Credential = New-Object PSCredential('AzureDevOps', $SecurePAT)
 
 
+function Increment-MessagingModuleVersion {
+    # Use Get-PSCommandPath from ConfigurationPackage
+    # $scriptRoot = Split-Path -Parent (Get-PSCommandPath)
+    # $psd1Path = Join-Path -Path $scriptRoot -ChildPath 'MessagingModule\MessagingModule.psd1'
+    # $content = Get-Content $psd1Path
+
+    $psd1Path = 'MessagingModule\MessagingModule.psd1'
+    $content = Get-Content $psd1Path
+    
+    $versionLineIndex = $content | Select-String -Pattern '^\s*ModuleVersion\s*=' | Select-Object -First 1 | ForEach-Object { $_.LineNumber - 1 }
+    if ($null -eq $versionLineIndex) {
+        Write-Error "ModuleVersion not found in $psd1Path"
+        return
+    }
+
+    $versionLine = $content[$versionLineIndex]
+    if ($versionLine -match "'(\d+)\.(\d+)\.(\d+)'") {
+        $major = [int]$matches[1]
+        $minor = [int]$matches[2]
+        $patch = [int]$matches[3] + 1
+        $newVersion = "'$major.$minor.$patch'"
+        $content[$versionLineIndex] = $versionLine -replace "'\d+\.\d+\.\d+'", $newVersion
+        Set-Content -Path $psd1Path -Value $content
+        Write-Host "Incremented MessagingModule.psd1 version to $major.$minor.$patch"
+    } else {
+        Write-Error "Could not parse version in $psd1Path"
+    }
+}
+
+
+Increment-MessagingModuleVersion
+
+
 
 # Unregister-PSRepository -Name 'OrchestratorPshRepo3'
 $cred = New-Object System.Management.Automation.PSCredential("AzureDevOps", $securePAT)
