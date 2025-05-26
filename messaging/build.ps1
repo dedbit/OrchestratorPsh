@@ -7,6 +7,7 @@
 $packagePath = "MessagingModule.nuspec"
 $outputDirectory = "..\Output"
 $nugetPath = "..\Tools\nuget.exe"
+$modulePath = Join-Path -Path (Get-Location) -ChildPath "MessagingModule\MessagingModule.psd1"
 
 # Ensure the output directory exists
 if (-Not (Test-Path -Path $outputDirectory)) {
@@ -28,7 +29,6 @@ if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
     Write-Host "Nuspec version updated to $newVersion" -ForegroundColor Cyan
     
     # Update module manifest
-    $modulePath = Join-Path -Path (Get-Location) -ChildPath "MessagingModule\MessagingModule.psd1"
     if (Test-Path $modulePath) {
         $moduleContent = Get-Content $modulePath -Raw
         $moduleContent = $moduleContent -replace "ModuleVersion = '[0-9]+\.[0-9]+\.[0-9]+'", "ModuleVersion = '$newVersion'"
