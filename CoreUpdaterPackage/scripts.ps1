@@ -1,3 +1,4 @@
+cd C:\dev\12C\OrchestratorPsh\messaging
 Import-Module ..\Modules\Configuration\ConfigurationPackage.psd1
 Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
 Initialize-12Configuration ..\environments\dev.json
@@ -59,20 +60,36 @@ Install-Module MessagingModule -Repository OrchestratorPshRepo
 
 ## psh 7 using v2 feed worked. 
 # Also works in pwsh 5.1
+# had issues in session. But removing psrepository OrchestratorPshRepo22 and opening new terminal helped
+
 $SecurePAT = ConvertTo-SecureString $PersonalAccessToken -AsPlainText -Force
 $Cred = New-Object System.Management.Automation.PSCredential('AzureDevOps', $SecurePAT)
 Install-Module -Name MessagingModule -Repository 'OrchestratorPshRepo' -Credential $Cred
 
 
-
-$RepoUrlV2 = "https://pkgs.dev.azure.com/12c/yourProject/_packaging/OrchestratorPshRepo/nuget/v2"
+Unregister-PSRepository -Name 'OrchestratorPshRepo22'
+# Unregister-PSRepository -Name  OrchestratorPshRepo
+Get-PSRepository
+# $RepoUrlV2 = "https://pkgs.dev.azure.com/12c/yourProject/_packaging/OrchestratorPshRepo/nuget/v2"
+$ArtifactsFeedUrlV2 = 'https://pkgs.dev.azure.com/12c/Testprojects/_packaging/OrchestratorPsh/nuget/v2'
 $ArtifactsFeedUrlV2
 Register-PSRepository -Name 'OrchestratorPshRepo22' `
                       -SourceLocation $ArtifactsFeedUrlV2 `
                       -PublishLocation $ArtifactsFeedUrlV2 `
-                      -InstallationPolicy Trusted
+                      -InstallationPolicy Trusted `
+                      -Credential $Cred
 
+Publish-Module -Path "C:\dev\12C\OrchestratorPsh\messaging\MessagingModule\" -Repository "OrchestratorPshRepo22" -NuGetApiKey $SecurePAT
+
+
+# Install module
+Uninstall-Module MessagingModule
 Install-Module -Name MessagingModule -Repository 'OrchestratorPshRepo22' -Credential $Cred -Force
-Install-Module -Name MessagingModule -Scope AllUsers
-Get-InstalledModule MessagingModule
+Install-Module -Name MessagingModule -Scope AllUsers -Repository 'OrchestratorPshRepo22' -Credential $Cred
+Get-InstalledModule MessagingModule |fl
 
+# Import module
+get-module MessagingModule
+Import-Module MessagingModule
+Get-Command -module MessagingModule
+Remove-Module MessagingModule
