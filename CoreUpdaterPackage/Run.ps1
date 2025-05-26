@@ -2,11 +2,17 @@
 # Todo
 # Use Get-ScriptRoot to get path
 # Certificate based authentication to Artifacts feed
+# Move ensuring repository to a function
 
 # Import the Az module to interact with Azure services
 # Import-Module Az
 
 . .\functions.ps1
+
+Import-Module ..\Modules\Configuration\ConfigurationPackage.psd1
+Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
+Initialize-12Configuration
+Connect-12Azure
 
 # Import OrchestratorCommon module
 $moduleRoot = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Modules\OrchestratorCommon"
