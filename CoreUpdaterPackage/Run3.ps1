@@ -48,21 +48,45 @@ if (Test-Path $packagesJsonPath) {
     exit 1
 }
 
+# Check for administrator privileges
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Error "You are NOT running this script as Administrator. Some operations (like -Scope AllUsers) require admin rights. Aborting script."
+    exit 1
+}
+
 try {
     foreach ($packageName in $packagesList) {
         Write-Host "\nChecking package: $packageName" -ForegroundColor Cyan
         $installed = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
-        if ($installed) {
-            Write-Host "  Package $packageName version $($installed.Version) is already installed." -ForegroundColor Green
-        } else {
-            Write-Host "  Installing $packageName from $repoName..." -ForegroundColor Yellow
-            Install-Module -Name $packageName -Repository $repoName -Force
-            $installed2 = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
-            if ($installed2) {
-                Write-Host "  Package $packageName version $($installed2.Version) installed successfully." -ForegroundColor Green
+        $repoModules = Find-Module -Name $packageName -Repository $repoName -ErrorAction SilentlyContinue
+        if ($repoModules) {
+            $latestVersion = $repoModules.Version
+            if ($installed) {
+                if ([version]$installed.Version -lt [version]$latestVersion) {
+                    Write-Host "  Newer version $latestVersion available. Upgrading $packageName..." -ForegroundColor Yellow
+                    Uninstall-Module -Name $packageName -AllVersions -Force
+                    Install-Module -Name $packageName -Repository $repoName -RequiredVersion $latestVersion -Force -Scope AllUsers
+                    $installed2 = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
+                    if ($installed2 -and $installed2.Version -eq $latestVersion) {
+                        Write-Host "  Package $packageName upgraded to version $($installed2.Version)." -ForegroundColor Green
+                    } else {
+                        Write-Error "  Failed to upgrade $packageName to $latestVersion."
+                    }
+                } else {
+                    Write-Host "  Package $packageName is up to date (version $($installed.Version))." -ForegroundColor Green
+                }
             } else {
-                Write-Error "  Failed to install package $packageName from $repoName."
+                Write-Host "  Installing $packageName version $latestVersion from $repoName..." -ForegroundColor Yellow
+                Install-Module -Name $packageName -Repository $repoName -RequiredVersion $latestVersion -Force -Scope AllUsers
+                $installed2 = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
+                if ($installed2 -and $installed2.Version -eq $latestVersion) {
+                    Write-Host "  Package $packageName version $($installed2.Version) installed successfully." -ForegroundColor Green
+                } else {
+                    Write-Error "  Failed to install package $packageName version $latestVersion from $repoName."
+                }
             }
+        } else {
+            Write-Warning "  Package $packageName not found in repository $repoName. Skipping."
         }
     }
 } catch {
