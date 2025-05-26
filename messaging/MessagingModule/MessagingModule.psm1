@@ -1,8 +1,14 @@
 # MessagingModule.psm1
 # PowerShell module for messaging functionality
 
-# Module version
-$script:ModuleVersion = "1.0.35"
+# Get module version from the psd1 manifest
+$psd1Path = Join-Path -Path $PSScriptRoot -ChildPath 'MessagingModule.psd1'
+if (Test-Path $psd1Path) {
+    $manifest = Import-PowerShellDataFile -Path $psd1Path
+    $script:ModuleVersion = $manifest.ModuleVersion
+} else {
+    $script:ModuleVersion = "unknown"
+}
 
 # Module description
 $script:ModuleDescription = "PowerShell module for messaging functionality in OrchestratorPsh"
