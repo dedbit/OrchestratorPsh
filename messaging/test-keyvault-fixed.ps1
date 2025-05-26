@@ -2,7 +2,7 @@
 # Script to test the Get-PATFromKeyVault function
 
 # Import the Az module
-Import-Module Az
+# Import-Module Az
 
 # Import OrchestratorCommon module
 $moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"

@@ -1,8 +1,10 @@
 # build.ps1
 # Script to build the messaging package
 
+# Todo: When setting new version for package, It should also update the nuspec file src target. 
+
 # Define variables
-$packagePath = "MessagingPackage.nuspec"
+$packagePath = "MessagingModule.nuspec"
 $outputDirectory = "..\Output"
 $nugetPath = "..\Tools\nuget.exe"
 
@@ -26,7 +28,7 @@ if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
     Write-Host "Nuspec version updated to $newVersion" -ForegroundColor Cyan
     
     # Update module manifest
-    $modulePath = Join-Path -Path (Get-Location) -ChildPath "Module\MessagingModule.psd1"
+    $modulePath = Join-Path -Path (Get-Location) -ChildPath "MessagingModule\MessagingModule.psd1"
     if (Test-Path $modulePath) {
         $moduleContent = Get-Content $modulePath -Raw
         $moduleContent = $moduleContent -replace "ModuleVersion = '[0-9]+\.[0-9]+\.[0-9]+'", "ModuleVersion = '$newVersion'"
@@ -49,7 +51,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "NuGet package built successfully." -ForegroundColor Green
 
     # Get the list of old package files
-    $oldPackages = Get-ChildItem -Path $outputDirectory -Filter "MessagingPackage.*.nupkg" | Where-Object { $_.Name -ne "MessagingPackage.$major.$minor.$patch.nupkg" }
+    $oldPackages = Get-ChildItem -Path $outputDirectory -Filter "MessagingModule.*.nupkg" | Where-Object { $_.Name -ne "MessagingModule.$major.$minor.$patch.nupkg" }
 
     foreach ($oldPackage in $oldPackages) {
         Write-Host "Deleting old package: $($oldPackage.Name)" -ForegroundColor Yellow

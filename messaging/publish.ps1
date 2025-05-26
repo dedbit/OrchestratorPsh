@@ -1,8 +1,22 @@
 # publish.ps1
 # Script to publish the messaging package to a NuGet feed
 
+# Todo:
+# If artifacts feed already exists it fails. 
+
 # Import the Az module to interact with Azure services
 # Import-Module Az
+
+# Set the NuGet source name
+$ArtifactsFeed = "OrchestratorPshRepo"
+$SecretName = "PAT"   # Replace with the name of the secret storing the PAT
+
+
+Import-Module ..\Modules\Configuration\ConfigurationPackage.psd1
+Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
+Initialize-12Configuration ..\environments\dev.json
+Connect-12Azure
+
 
 # Import OrchestratorCommon module
 $moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
@@ -29,7 +43,7 @@ if (Test-Path $envConfigPath) {
 }
 
 # Get the package version from the nuspec file
-$packagePath = "MessagingPackage.nuspec"
+$packagePath = "MessagingModule.nuspec"
 $nuspecContent = Get-Content $packagePath -Raw
 if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
     $major = $matches[1]
@@ -44,10 +58,8 @@ if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
 
 # Detect the latest package in the output directory
 $outputDirectory = "..\Output"
-$PackagePath = Join-Path -Path $outputDirectory -ChildPath "MessagingPackage.$version.nupkg"
+$PackagePath = Join-Path -Path $outputDirectory -ChildPath "MessagingModule.$version.nupkg"
 Write-Host "Using package path: $PackagePath" -ForegroundColor Cyan
-
-$SecretName = "PAT"   # Replace with the name of the secret storing the PAT
 
 # Verify the package exists
 if (-not (Test-Path $PackagePath)) {
@@ -59,9 +71,6 @@ Write-Host "Publishing package $PackagePath..." -ForegroundColor Cyan
 
 # Retrieve the PAT securely
 $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
-
-# Set the NuGet source name
-$ArtifactsFeed = "OrchestratorPsh"
 
 # Set up the NuGet source with the PAT
 Write-Host "Adding NuGet source..." -ForegroundColor Cyan

@@ -1,8 +1,7 @@
-<?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
-    <id>MessagingPackage</id>
-    <version>1.0.8</version>
+    <id>MessagingModule</id> <!-- IMPORTANT: Must match PSD1 and module name -->
+    <version>1.0.24</version>
     <authors>OrchestratorPsh Team</authors>
     <owners>12C</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -12,9 +11,11 @@
     <tags>Messaging Package OrchestratorPsh</tags>
   </metadata>
   <files>
-    <file src="Module\**" target="Module" />
+    <file src="MessagingModule\**" target="MessagingModule\1.0.14" />
   </files>
 </package>
+
+
 
 
 

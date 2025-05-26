@@ -2,7 +2,7 @@
 # PowerShell module for messaging functionality
 
 # Module version
-$script:ModuleVersion = "1.0.0"
+$script:ModuleVersion = "1.0.18"
 
 # Module description
 $script:ModuleDescription = "PowerShell module for messaging functionality in OrchestratorPsh"
