@@ -7,15 +7,15 @@
 # Import the Az module to interact with Azure services
 # Import-Module Az
 
-. .\functions.ps1
+. "$PSScriptRoot\functions.ps1"
 
-Import-Module ..\Modules\Configuration\ConfigurationPackage.psd1
-Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
+Import-Module "$PSScriptRoot\..\Modules\Configuration\ConfigurationPackage.psd1" -Force
+Import-Module "$PSScriptRoot\..\Modules\OrchestratorAzure\OrchestratorAzure.psd1" -Force
 Initialize-12Configuration
 Connect-12Azure
 
 # Import OrchestratorCommon module
-$moduleRoot = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Modules\OrchestratorCommon"
+$moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
 if (Test-Path $moduleRoot) {
     Import-Module $moduleRoot -Force
     Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
