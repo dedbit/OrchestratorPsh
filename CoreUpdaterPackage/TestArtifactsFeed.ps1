@@ -2,6 +2,11 @@
 # Import the Az module to interact with Azure services
 # Import-Module Az
 
+Import-Module ..\Modules\Configuration\ConfigurationPackage.psd1
+Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
+Initialize-12Configuration ..\environments\dev.json
+Connect-12Azure
+
 # Determine script root in both script and console contexts
 $ScriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 

@@ -1,6 +1,11 @@
 # Test-Module.ps1
 # Script to test the OrchestratorAzure module functionality
 
+Import-Module ..\..\Modules\Configuration\ConfigurationPackage.psd1
+Import-Module ..\..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
+Initialize-12Configuration ..\..\environments\dev.json
+Connect-12Azure
+
 # Handle cases where $PSScriptRoot might be empty (when code is pasted into terminal)
 $scriptRoot = if ($PSScriptRoot) { 
     $PSScriptRoot 
