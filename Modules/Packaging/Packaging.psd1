@@ -61,7 +61,11 @@
         'Get-PackageVersionFromNuspec',
         'Get-NuGetPATFromKeyVault',
         'Publish-NuGetPackageAndCleanup',
-        'Ensure-NuGetFeedConfigured'
+        'Ensure-NuGetFeedConfigured',
+        'Confirm-DirectoryExists',        # Added
+        'Set-PackageVersionIncrement',  # Added
+        'Invoke-NuGetPack',             # Added
+        'Remove-OldPackageVersions'     # Added
     )
 
     # Cmdlets to export from this module

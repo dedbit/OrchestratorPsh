@@ -141,5 +141,139 @@ function Ensure-NuGetFeedConfigured {
     Write-Host "NuGet source '$FeedName' configured." -ForegroundColor Green
 }
 
+function Confirm-DirectoryExists { # Renamed from Ensure-DirectoryExists
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Path
+    )
+    if (-not (Test-Path -Path $Path)) {
+        try {
+            New-Item -ItemType Directory -Path $Path -ErrorAction Stop | Out-Null
+            Write-Host "Created directory: $Path" -ForegroundColor Green
+        } catch {
+            Write-Error "Failed to create directory: $Path. Error: $($_.Exception.Message)"
+            throw
+        }
+    } else {
+        Write-Host "Directory already exists: $Path" -ForegroundColor Cyan
+    }
+}
+
+function Set-PackageVersionIncrement { # Renamed from Increment-PackageVersion
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$NuspecPath,
+
+        [Parameter(Mandatory=$false)]
+        [string]$ModuleManifestPath
+    )
+
+    Write-Host "Incrementing package version for: $NuspecPath" -ForegroundColor Cyan
+    if (-not (Test-Path $NuspecPath)) {
+        Write-Error "Nuspec file not found at $NuspecPath."
+        throw "Nuspec file not found: $NuspecPath"
+    }
+
+    $nuspecContent = Get-Content $NuspecPath -Raw
+    if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
+        $major = [int]$matches[1]
+        $minor = [int]$matches[2]
+        $patch = [int]$matches[3] + 1
+        $newVersion = "$major.$minor.$patch"
+
+        # Update nuspec file
+        $nuspecContent = $nuspecContent -replace '<version>[0-9]+\.[0-9]+\.[0-9]+</version>', "<version>$newVersion</version>"
+        Set-Content -Path $NuspecPath -Value $nuspecContent
+        Write-Host "Nuspec version updated to $newVersion in $NuspecPath" -ForegroundColor Cyan
+
+        # Update module manifest if path is provided
+        if (-not [string]::IsNullOrEmpty($ModuleManifestPath)) {
+            if (Test-Path $ModuleManifestPath) {
+                $moduleContent = Get-Content $ModuleManifestPath -Raw
+                # Regex pattern now uses a here-string for robustness and to correctly escape dots for the regex engine.
+                $regexFindPattern = @'
+ModuleVersion\\s*=\\s*['"]([0-9]+\\.[0-9]+\\.[0-9]+)['"]
+'@
+                $regexReplaceWith = "ModuleVersion = '$newVersion'"
+                $moduleContent = $moduleContent -replace $regexFindPattern, $regexReplaceWith
+                Set-Content -Path $ModuleManifestPath -Value $moduleContent
+                Write-Host "Module manifest version updated to $newVersion in $ModuleManifestPath" -ForegroundColor Cyan
+            } else {
+                Write-Warning "Module manifest file not found at $ModuleManifestPath. Skipping update."
+            }
+        }
+        return $newVersion
+    } else {
+        Write-Error "Failed to find version in nuspec file: $NuspecPath"
+        throw "Failed to find version in nuspec file: $NuspecPath"
+    }
+}
+
+function Invoke-NuGetPack {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$NuspecPath,
+
+        [Parameter(Mandatory=$true)]
+        [string]$OutputDirectory,
+
+        [Parameter(Mandatory=$false)]
+        [string]$NuGetExePath = "nuget.exe" # Default to nuget.exe in PATH
+    )
+
+    Write-Host "Building NuGet package from $NuspecPath to $OutputDirectory..." -ForegroundColor Cyan
+    
+    # Ensure NuGet executable exists or is in PATH
+    if ($NuGetExePath -ne "nuget.exe" -and -not (Test-Path $NuGetExePath)) {
+        Write-Error "NuGet executable not found at specified path: $NuGetExePath"
+        throw "NuGet executable not found: $NuGetExePath"
+    }
+    
+    try {
+        & $NuGetExePath pack $NuspecPath -OutputDirectory $OutputDirectory
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "NuGet package built successfully." -ForegroundColor Green
+        } else {
+            Write-Error "Failed to build NuGet package. NuGet exited with code $LASTEXITCODE."
+            throw "NuGet pack failed with exit code $LASTEXITCODE."
+        }
+    } catch {
+        Write-Error "An error occurred during NuGet pack: $($_.Exception.Message)"
+        throw
+    }
+}
+
+function Remove-OldPackageVersions {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$OutputDirectory,
+
+        [Parameter(Mandatory=$true)]
+        [string]$PackageBaseName,
+
+        [Parameter(Mandatory=$true)]
+        [string]$VersionToKeep # Expected format X.Y.Z
+    )
+
+    Write-Host "Removing old package versions for '$PackageBaseName' in '$OutputDirectory', keeping version '$VersionToKeep'..." -ForegroundColor Cyan
+    $packageFileToKeep = "$($PackageBaseName).$($VersionToKeep).nupkg"
+    
+    Get-ChildItem -Path $OutputDirectory -Filter "$($PackageBaseName).*.nupkg" | ForEach-Object {
+        if ($_.Name -ne $packageFileToKeep) {
+            Write-Host "Deleting old package: $($_.Name)" -ForegroundColor Yellow
+            try {
+                Remove-Item -Path $_.FullName -Force -ErrorAction Stop
+            } catch {
+                Write-Warning "Failed to delete old package: $($_.FullName). Error: $($_.Exception.Message)"
+            }
+        }
+    }
+}
+
+
 # Export the functions to make them available when the module is imported
-Export-ModuleMember -Function 'Get-PackageVersionFromNuspec', 'Get-NuGetPATFromKeyVault', 'Publish-NuGetPackageAndCleanup', 'Ensure-NuGetFeedConfigured'
+Export-ModuleMember -Function 'Get-PackageVersionFromNuspec', 'Get-NuGetPATFromKeyVault', 'Publish-NuGetPackageAndCleanup', 'Ensure-NuGetFeedConfigured', 'Confirm-DirectoryExists', 'Set-PackageVersionIncrement', 'Invoke-NuGetPack', 'Remove-OldPackageVersions'
