@@ -63,6 +63,9 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
         {
           value: '185.162.105.5'
         }
+        {
+          value: '185.162.105.6'
+        }
       ]
     }
   }
