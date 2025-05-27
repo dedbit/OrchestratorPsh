@@ -56,15 +56,12 @@ function Connect-12AzureWithCertificate {
             throw "Global configuration variable '12cConfig' is not set. Please initialize it first."
         }
         $TenantId = $global:12cConfig.TenantId
-        $SubscriptionId = $global:12cConfig.SubscriptionId
         $CertificateThumbprint = $global:12cConfig.certThumbprint
         $ApplicationId = $global:12cConfig.appId
 
         Write-Host "Connecting to Azure using certificate authentication..." -ForegroundColor Cyan
 
-        # Create a service principal connection using the certificate
-        $connection = Connect-AzAccount -ServicePrincipal -TenantId $TenantId -SubscriptionId $SubscriptionId `
-            -CertificateThumbprint $CertificateThumbprint -ApplicationId $ApplicationId -ErrorAction Stop
+        $connection = Connect-AzAccount -ServicePrincipal -CertificateThumbprint $12cConfig.certThumbprint -ApplicationId $12cConfig.AppId -TenantId $12cConfig.tenantId
 
         Write-Host "Successfully connected to Azure using certificate authentication." -ForegroundColor Green
         return $connection
