@@ -38,19 +38,21 @@ if (Test-Path $moduleRoot) {
     exit 1
 }
 
-# Load environment configuration (this block was previously duplicated)
-if (Test-Path $envConfigPath) {
-    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
-    $KeyVaultName = $envConfig.keyVaultName
-    $TenantId = $envConfig.tenantId
-    $SubscriptionId = $envConfig.subscriptionId
-    $ArtifactsFeedUrl = $envConfig.artifactsFeedUrl
-    Write-Host "Using Key Vault: $KeyVaultName from environments/dev.json`nUsing Tenant ID: $TenantId from environments/dev.json`nUsing Subscription ID: $SubscriptionId from environments/dev.json`nUsing Artifacts Feed URL: $ArtifactsFeedUrl from environments/dev.json" -ForegroundColor Cyan
-} else {
-    Write-Error "Could not find environment config at $envConfigPath. Aborting package publishing."
+# Ensure environment configuration is loaded for PAT retrieval and NuGet operations
+if (-not (Test-Path $envConfigPath)) {
+    Write-Error "Environment configuration file not found at $envConfigPath. Aborting."
     exit 1
 }
+$envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
+$KeyVaultName = $envConfig.keyVaultName
+$TenantId = $envConfig.tenantId
+$SubscriptionId = $envConfig.subscriptionId
+$ArtifactsFeedUrl = $envConfig.artifactsFeedUrl
 
+if ([string]::IsNullOrEmpty($KeyVaultName) -or [string]::IsNullOrEmpty($TenantId) -or [string]::IsNullOrEmpty($SubscriptionId) -or [string]::IsNullOrEmpty($ArtifactsFeedUrl)) {
+    Write-Error "One or more required configuration values (KeyVaultName, TenantId, SubscriptionId, ArtifactsFeedUrl) are missing from $envConfigPath. Aborting."
+    exit 1
+}
 
 # Get the package version from the nuspec file
 $packagePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'ConfigurationPackage.nuspec'
@@ -83,18 +85,66 @@ if (-not (Test-Path $PackagePath)) {
 Write-Host "Publishing package $PackagePath..." -ForegroundColor Cyan
 
 # Retrieve the PAT securely
+# Ensure $KeyVaultName, $SecretName, $TenantId, $SubscriptionId are available here
+Write-Host "Retrieving PAT from Key Vault: $KeyVaultName" -ForegroundColor Cyan
 $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
 
+# Check if PAT was retrieved successfully
+if ([string]::IsNullOrEmpty($PersonalAccessToken)) {
+    Write-Error "Failed to retrieve Personal Access Token from Key Vault. Aborting."
+    exit 1
+}
+
 # Set up the NuGet source with the PAT
-Write-Host "Adding NuGet source..." -ForegroundColor Cyan
+Write-Host "Ensuring NuGet source '$ArtifactsFeed' is correctly configured..." -ForegroundColor Cyan
+
+# Check if the source already exists
+Write-Host "Checking if NuGet source '$ArtifactsFeed' already exists..."
+$sourceExistsOutput = nuget sources list -Name $ArtifactsFeed -Format Short
+$sourceFound = $false
+if ($LASTEXITCODE -eq 0 -and $sourceExistsOutput) {
+    # nuget sources list with -Name will output the source name if found, or nothing if not.
+    # We need to be careful as $sourceExistsOutput could be an array of strings or a single string.
+    if ($sourceExistsOutput -is [array]) {
+        if ($sourceExistsOutput -join '`n' -match [regex]::Escape($ArtifactsFeed)) {
+            $sourceFound = $true
+        }
+    } elseif ($sourceExistsOutput -is [string] -and $sourceExistsOutput -match [regex]::Escape($ArtifactsFeed)) {
+        $sourceFound = $true
+    }
+}
+
+if ($sourceFound) {
+    Write-Host "NuGet source '$ArtifactsFeed' found. Removing it before re-adding..." -ForegroundColor Yellow
+    nuget sources remove -Name $ArtifactsFeed
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "Failed to remove existing NuGet source '$ArtifactsFeed'. Attempting to add it anyway."
+    }
+} else {
+    Write-Host "NuGet source '$ArtifactsFeed' not found. Proceeding to add."
+}
+
+# Add the source
 nuget sources add -Name $ArtifactsFeed -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText
+
+# Check if nuget sources add was successful - $LASTEXITCODE might not be reliable for 'nuget sources add'
+# A more robust check would be to list sources and verify, but for now, we'll assume if no error is thrown by nuget, it's okay.
 
 # Publish the package
 Write-Host "Pushing package to feed..." -ForegroundColor Cyan
 nuget push $PackagePath -Source $ArtifactsFeed -ApiKey "AzureDevOps"
 
+# Check if nuget push was successful
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to publish NuGet package. NuGet exited with code $LASTEXITCODE."
+    # Attempt to clean up the NuGet source even if push failed
+    Write-Host "Attempting to clean up NuGet source after failed push..." -ForegroundColor Yellow
+    nuget sources remove -Name $ArtifactsFeed
+    exit $LASTEXITCODE
+}
+
 # Clean up the NuGet source to remove sensitive information
-Write-Host "Cleaning up..." -ForegroundColor Cyan
+Write-Host "Cleaning up NuGet source after successful push..." -ForegroundColor Cyan
 nuget sources remove -Name $ArtifactsFeed
 
 Write-Host "Package published successfully!" -ForegroundColor Green

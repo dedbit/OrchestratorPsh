@@ -4,7 +4,10 @@ General guidance:
 - Make as minimal changes as possible. 
 - If you see things that would be nice to implement, suggest them to me. Dont just make the changes. 
 - Ask questions if anything is unclear. 
-- Use relative references to modules and resources. Use Get-ScriptRoot for building paths when possible. 
+*   When constructing paths in PowerShell scripts, prefer the following pattern for robustness in both direct script execution and interactive terminal sessions:
+    ```powershell
+    $variablePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'relative\path\to\resource'
+    ```
 
 Powershell guidance:
 - Avoid having multiple consecutive lines of Write-Host. Instead combine them into one Write-host statement. 
