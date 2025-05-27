@@ -7,13 +7,63 @@
 # Import the Az module to interact with Azure services
 # Import-Module Az
 
+# Function to ensure NuGet feed is configured
+function Ensure-NuGetFeedConfigured {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$FeedName,
+
+        [Parameter(Mandatory=$true)]
+        [string]$FeedUrl,
+
+        [Parameter(Mandatory=$true)]
+        [string]$PAT
+    )
+
+    Write-Host "Ensuring NuGet source '$FeedName' is correctly configured..." -ForegroundColor Cyan
+
+    # Check if the source already exists
+    Write-Host "Checking if NuGet source '$FeedName' already exists..."
+    $sourceExistsOutput = nuget sources list -Name $FeedName -Format Short
+    $sourceFound = $false
+    if ($LASTEXITCODE -eq 0 -and $sourceExistsOutput) {
+        # nuget sources list with -Name will output the source name if found, or nothing if not.
+        # We need to be careful as $sourceExistsOutput could be an array of strings or a single string.
+        if ($sourceExistsOutput -is [array]) {
+            if ($sourceExistsOutput -join '`n' -match [regex]::Escape($FeedName)) {
+                $sourceFound = $true
+            }
+        } elseif ($sourceExistsOutput -is [string] -and $sourceExistsOutput -match [regex]::Escape($FeedName)) {
+            $sourceFound = $true
+        }
+    }
+
+    if ($sourceFound) {
+        Write-Host "NuGet source '$FeedName' found. Removing it before re-adding..." -ForegroundColor Yellow
+        nuget sources remove -Name $FeedName
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Failed to remove existing NuGet source '$FeedName'. Attempting to add it anyway."
+        }
+    } else {
+        Write-Host "NuGet source '$FeedName' not found. Proceeding to add."
+    }
+
+    # Add the source
+    nuget sources add -Name $FeedName -Source $FeedUrl -Username "AzureDevOps" -Password $PAT -StorePasswordInClearText
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to add NuGet source '$FeedName'. NuGet exited with code $LASTEXITCODE."
+        # It might be prudent to exit here if adding the source fails, as subsequent operations will likely fail.
+        exit $LASTEXITCODE 
+    }
+    Write-Host "NuGet source '$FeedName' configured." -ForegroundColor Green
+}
+
 
 # Set the NuGet source name and package variables for ConfigurationPackage
 $ArtifactsFeed = "OrchestratorPshRepo"
 $SecretName = "PAT"   # Replace with the name of the secret storing the PAT
 $PackageName = "ConfigurationPackage"
-
-
 
 
 # Define variables at the top
@@ -96,36 +146,7 @@ if ([string]::IsNullOrEmpty($PersonalAccessToken)) {
 }
 
 # Set up the NuGet source with the PAT
-Write-Host "Ensuring NuGet source '$ArtifactsFeed' is correctly configured..." -ForegroundColor Cyan
-
-# Check if the source already exists
-Write-Host "Checking if NuGet source '$ArtifactsFeed' already exists..."
-$sourceExistsOutput = nuget sources list -Name $ArtifactsFeed -Format Short
-$sourceFound = $false
-if ($LASTEXITCODE -eq 0 -and $sourceExistsOutput) {
-    # nuget sources list with -Name will output the source name if found, or nothing if not.
-    # We need to be careful as $sourceExistsOutput could be an array of strings or a single string.
-    if ($sourceExistsOutput -is [array]) {
-        if ($sourceExistsOutput -join '`n' -match [regex]::Escape($ArtifactsFeed)) {
-            $sourceFound = $true
-        }
-    } elseif ($sourceExistsOutput -is [string] -and $sourceExistsOutput -match [regex]::Escape($ArtifactsFeed)) {
-        $sourceFound = $true
-    }
-}
-
-if ($sourceFound) {
-    Write-Host "NuGet source '$ArtifactsFeed' found. Removing it before re-adding..." -ForegroundColor Yellow
-    nuget sources remove -Name $ArtifactsFeed
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warning "Failed to remove existing NuGet source '$ArtifactsFeed'. Attempting to add it anyway."
-    }
-} else {
-    Write-Host "NuGet source '$ArtifactsFeed' not found. Proceeding to add."
-}
-
-# Add the source
-nuget sources add -Name $ArtifactsFeed -Source $ArtifactsFeedUrl -Username "AzureDevOps" -Password $PersonalAccessToken -StorePasswordInClearText
+Ensure-NuGetFeedConfigured -FeedName $ArtifactsFeed -FeedUrl $ArtifactsFeedUrl -PAT $PersonalAccessToken
 
 # Check if nuget sources add was successful - $LASTEXITCODE might not be reliable for 'nuget sources add'
 # A more robust check would be to list sources and verify, but for now, we'll assume if no error is thrown by nuget, it's okay.
