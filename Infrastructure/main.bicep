@@ -20,8 +20,7 @@ param ownerObjectId string
 // App ID for Key Vault access policies (from dev.json)
 param appObjectId string
 
-// Whether to create PAT secret with empty value - should be true only during initial deployment
-param createEmptyPat bool = false
+
 
 // Define Resource Group with tag - this places the GitHub repo tag on the resource group
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -45,7 +44,6 @@ module keyVaultModule 'keyVault.bicep' = {
     tenantId: tenantId
     ownerObjectId: ownerObjectId
     appObjectId: appObjectId
-    createEmptyPat: createEmptyPat
   }
 }
 
@@ -66,7 +64,7 @@ output deploymentOutputs object = {
   subscriptionId: subscriptionId
   keyVaultName: keyVaultModule.outputs.keyVaultName
   storageAccountName: storageModule.outputs.storageAccountName
-  patCreated: createEmptyPat  // Reference the parameter to avoid unused parameter warning
   appId: appObjectId                // Reference the parameter to avoid unused parameter warning
 }
+
 

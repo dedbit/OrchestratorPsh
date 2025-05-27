@@ -71,17 +71,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-// Define KeyVault Secret with empty value only during initial deployment
-@description('Whether to create PAT secret with empty value - should be true only during initial deployment')
-param createEmptyPat bool = false
 
-resource patSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (createEmptyPat) {
-  parent: keyVault
-  name: 'PAT'
-  properties: {
-    value: 'Initialized'
-  }
-}
 
 // Access Policy for the key vault
 resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
@@ -110,4 +100,3 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-
 
 // Output the key vault name for use in the parent template
 output keyVaultName string = keyVault.name
-

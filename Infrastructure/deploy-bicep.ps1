@@ -57,56 +57,15 @@ $parameterContent.parameters.githubRepoUrl.value = $env:GITHUB_REPO_URL
 
 
 
-# Remove unused variable warning
-$createEmptyPat = $false
 
-# Check if the PAT secret exists in Key Vault - we'll only create an empty PAT if it doesn't exist
+# Only check for Key Vault existence for post-deployment secret logic
 $keyVaultName = $parameterContent.parameters.keyVaultName.value
-$createEmptyPat = $false
-
-# Check if the resource group and Key Vault already exist and if we should create an empty PAT secrets
 $resourceGroupExists = Get-AzResourceGroup -Name $parameterContent.parameters.resourceGroupName.value -ErrorAction SilentlyContinue
 if ($resourceGroupExists) {
-    # Check if Key Vault exists
     $keyVaultExists = Get-AzKeyVault -VaultName $keyVaultName -ResourceGroupName $parameterContent.parameters.resourceGroupName.value -ErrorAction SilentlyContinue
-    
-    if ($keyVaultExists) {
-        # Try to get the PAT secret
-        try {
-            $patSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name "PAT" -ErrorAction SilentlyContinue
-            if ($patSecret) {
-                Write-Host "PAT secret already exists in Key Vault. Will not create an empty one." -ForegroundColor Yellow
-                $createEmptyPat = $false
-            } else {
-                Write-Host "PAT secret does not exist in Key Vault. Will create an empty one." -ForegroundColor Yellow
-                $createEmptyPat = $true
-            }
-        }
-        catch {
-            # If we get an error (likely due to permissions), we'll assume PAT doesn't exist
-            Write-Host "Could not check if PAT secret exists. Will create an empty one." -ForegroundColor Yellow
-            $createEmptyPat = $true
-        }
-    } else {
-        # If Key Vault doesn't exist, we're doing initial deployment and should create PAT
-        Write-Host "Key Vault doesn't exist yet. Will create an empty PAT secret during deployment." -ForegroundColor Yellow
-        $createEmptyPat = $true
-    }
 } else {
-    # If resource group doesn't exist, we're doing initial deployment and should create PAT
-    Write-Host "Resource Group doesn't exist yet. Will create an empty PAT secret during deployment." -ForegroundColor Yellow
-    $createEmptyPat = $true
+    $keyVaultExists = $null
 }
-
-# Add the createEmptyPat parameter to the parameter file
-if (-not $parameterContent.parameters.createEmptyPat) {
-    $parameterContent.parameters | Add-Member -MemberType NoteProperty -Name 'createEmptyPat' -Value @{value = $createEmptyPat}
-} else {
-    $parameterContent.parameters.createEmptyPat.value = $createEmptyPat
-}
-
-# Save the updated parameter file
-$parameterContent | ConvertTo-Json -Depth 10 | Set-Content -Path $parameterFilePath
 
 # Set deployment values
 $location = $parameterContent.parameters.location.value
@@ -115,7 +74,7 @@ $deploymentName = "orchestratorPsh-deployment-$(Get-Date -Format 'yyyyMMddHHmmss
 
 # Show deployment parameters summary
 Write-Host "Deploying with the following parameters:" -ForegroundColor Green
-Write-Host "  Resource Group: $($parameterContent.parameters.resourceGroupName.value)`n  Key Vault: $($parameterContent.parameters.keyVaultName.value)`n  Location: $($parameterContent.parameters.location.value)`n  GitHub Repo URL: $env:GITHUB_REPO_URL`n  Tenant ID: $($parameterContent.parameters.tenantId.value)`n  Subscription ID: $($parameterContent.parameters.subscriptionId.value)`n  Object ID: $($parameterContent.parameters.ownerObjectId.value)`n  App Object ID: $($parameterContent.parameters.appObjectId.value)`n  Create Empty PAT: $($parameterContent.parameters.createEmptyPat.value)" -ForegroundColor Cyan
+Write-Host "  Resource Group: $($parameterContent.parameters.resourceGroupName.value)`n  Key Vault: $($parameterContent.parameters.keyVaultName.value)`n  Location: $($parameterContent.parameters.location.value)`n  GitHub Repo URL: $env:GITHUB_REPO_URL`n  Tenant ID: $($parameterContent.parameters.tenantId.value)`n  Subscription ID: $($parameterContent.parameters.subscriptionId.value)`n  Object ID: $($parameterContent.parameters.ownerObjectId.value)`n  App Object ID: $($parameterContent.parameters.appObjectId.value)" -ForegroundColor Cyan
 
 # Deploy the Bicep template at subscription level
 Write-Host "Deploying Bicep template at subscription level..." -ForegroundColor Green
@@ -128,8 +87,8 @@ New-AzSubscriptionDeployment `
     -TemplateFile $templateFilePath `
     -TemplateParameterFile $parameterFilePath `
     -githubRepoUrl $env:GITHUB_REPO_URL `
-    -createEmptyPat $createEmptyPat `
     -Verbose
+
 
 # Get and display the deployment outputs
 $subscriptionDeployment = Get-AzSubscriptionDeployment -Name $deploymentName -ErrorAction SilentlyContinue
@@ -139,3 +98,28 @@ if ($subscriptionDeployment) {
 }
 
 Write-Host "Deployment completed."
+
+# --- Post-deployment: Set PAT secret only if not present ---
+$patSecretName = "PAT"
+$initialSecretValue = "INITIAL_PAT_VALUE_TO_BE_REPLACED_MANUALLY" # Placeholder value
+
+# Check if Key Vault exists (determined earlier in the script)
+if ($keyVaultExists) {
+    try {
+        # Attempt to retrieve the secret
+        $patSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $patSecretName -ErrorAction SilentlyContinue
+
+        if ($null -eq $patSecret) {
+            # Secret does not exist, so create it
+            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $patSecretName -SecretValue (ConvertTo-SecureString $initialSecretValue -AsPlainText -Force)
+            Write-Host "PAT secret '$patSecretName' was not found and has been created with an initial value in Key Vault '$keyVaultName'. Please update it manually with the correct PAT." -ForegroundColor Green
+        } else {
+            # Secret already exists
+            Write-Host "PAT secret '$patSecretName' already exists in Key Vault '$keyVaultName'. No action taken." -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "Error checking or setting PAT secret '$patSecretName' in Key Vault '$keyVaultName': $($_.Exception.Message)" -ForegroundColor Red
+    }
+} else {
+    Write-Host "Key Vault '$keyVaultName' not found. Cannot check or create PAT secret." -ForegroundColor Red
+}
