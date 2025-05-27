@@ -24,15 +24,8 @@ if (Test-Path $moduleRoot) {
     exit 1
 }
 
-# Load environment config
-$envConfigPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\environments\dev.json"
-if (Test-Path $envConfigPath) {
-    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
-    $ArtifactsFeedUrlV2 = $envConfig.artifactsFeedUrlV2
-} else {
-    Write-Error "Could not find environment config at $envConfigPath. Aborting script."
-    exit 1
-}
+# Use loaded configuration from $global:12cConfig instead of loading dev.json manually
+$ArtifactsFeedUrlV2 = $global:12cConfig.artifactsFeedUrlV2
 
 # Ensure PSRepository is set up
 Ensure-12PsRepository
@@ -54,14 +47,22 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit 1
 }
 
+# Main logic: For each package in the list, check if it is installed and if the latest version is available in the repository.
+# - If installed and out of date, uninstall and upgrade to the latest version from the repository.
+# - If installed and up to date, skip.
+# - If not installed, install the latest version from the repository.
+# - If the package is not found in the repository, skip and warn.
+# Error handling ensures any issues are reported and the script continues to the next package.
 try {
     foreach ($packageName in $packagesList) {
         Write-Host "\nChecking package: $packageName" -ForegroundColor Cyan
         $installed = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
+        # Query the repository for the latest available version
         $repoModules = Find-Module -Name $packageName -Repository $repoName -ErrorAction SilentlyContinue
         if ($repoModules) {
             $latestVersion = $repoModules.Version
             if ($installed) {
+                # If installed version is older, uninstall and upgrade to latest
                 if ([version]$installed.Version -lt [version]$latestVersion) {
                     Write-Host "  Newer version $latestVersion available. Upgrading $packageName..." -ForegroundColor Yellow
                     Uninstall-Module -Name $packageName -AllVersions -Force
@@ -73,9 +74,11 @@ try {
                         Write-Error "  Failed to upgrade $packageName to $latestVersion."
                     }
                 } else {
+                    # If already up to date, report success
                     Write-Host "  Package $packageName is up to date (version $($installed.Version))." -ForegroundColor Green
                 }
             } else {
+                # If not installed, install the latest version
                 Write-Host "  Installing $packageName version $latestVersion from $repoName..." -ForegroundColor Yellow
                 Install-Module -Name $packageName -Repository $repoName -RequiredVersion $latestVersion -Force -Scope AllUsers
                 $installed2 = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
@@ -86,10 +89,12 @@ try {
                 }
             }
         } else {
+            # If package not found in repository, warn and skip
             Write-Warning "  Package $packageName not found in repository $repoName. Skipping."
         }
     }
 } catch {
+    # Catch and report any errors that occur during the process
     Write-Error "Error processing packages: $($_.Exception.Message)"
 }
 
