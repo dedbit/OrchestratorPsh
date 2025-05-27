@@ -88,22 +88,6 @@ if (Test-Path $moduleRoot) {
     exit 1
 }
 
-# Ensure environment configuration is loaded for PAT retrieval and NuGet operations
-if (-not (Test-Path $envConfigPath)) {
-    Write-Error "Environment configuration file not found at $envConfigPath. Aborting."
-    exit 1
-}
-$envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
-$KeyVaultName = $envConfig.keyVaultName
-$TenantId = $envConfig.tenantId
-$SubscriptionId = $envConfig.subscriptionId
-$ArtifactsFeedUrl = $envConfig.artifactsFeedUrl
-
-if ([string]::IsNullOrEmpty($KeyVaultName) -or [string]::IsNullOrEmpty($TenantId) -or [string]::IsNullOrEmpty($SubscriptionId) -or [string]::IsNullOrEmpty($ArtifactsFeedUrl)) {
-    Write-Error "One or more required configuration values (KeyVaultName, TenantId, SubscriptionId, ArtifactsFeedUrl) are missing from $envConfigPath. Aborting."
-    exit 1
-}
-
 # Get the package version from the nuspec file
 $packagePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'ConfigurationPackage.nuspec'
 
@@ -135,7 +119,19 @@ if (-not (Test-Path $PackagePath)) {
 Write-Host "Publishing package $PackagePath..." -ForegroundColor Cyan
 
 # Retrieve the PAT securely
-# Ensure $KeyVaultName, $SecretName, $TenantId, $SubscriptionId are available here
+# Access configuration values from the globally initialized configuration
+# Initialize-12Configuration stores config in $Global:12cConfig
+$KeyVaultName = $Global:12cConfig.keyVaultName
+$TenantId = $Global:12cConfig.tenantId
+$SubscriptionId = $Global:12cConfig.subscriptionId
+$ArtifactsFeedUrl = $Global:12cConfig.artifactsFeedUrl 
+
+# Check if essential config values were found
+if ([string]::IsNullOrEmpty($KeyVaultName) -or [string]::IsNullOrEmpty($TenantId) -or [string]::IsNullOrEmpty($SubscriptionId) -or [string]::IsNullOrEmpty($ArtifactsFeedUrl)) {
+    Write-Error "One or more required configuration values (KeyVaultName, TenantId, SubscriptionId, ArtifactsFeedUrl) could not be retrieved from the global configuration (expected in \$Global:12cConfig). Ensure Initialize-12Configuration has run successfully and set them."
+    exit 1
+}
+
 Write-Host "Retrieving PAT from Key Vault: $KeyVaultName" -ForegroundColor Cyan
 $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
 
