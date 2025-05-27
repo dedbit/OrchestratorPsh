@@ -60,63 +60,68 @@ function Ensure-NuGetFeedConfigured {
 }
 
 
-# Set the NuGet source name and package variables for ConfigurationPackage
+# --- Script Parameters & Static Configuration ---
 $ArtifactsFeed = "OrchestratorPshRepo"
-$SecretName = "PAT"   # Replace with the name of the secret storing the PAT
-$PackageName = "ConfigurationPackage"
+$SecretName = "PAT"   # Name of the secret in Key Vault storing the PAT
+$PackageName = "ConfigurationPackage" # Base name of the package
 
+# --- Path Definitions ---
+$basePath = ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) # Base path for relative calculations
 
-# Define variables at the top
-$envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\environments\dev.json'
-$configModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'ConfigurationPackage/ConfigurationPackage.psd1'
-$azureModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '../OrchestratorAzure/OrchestratorAzure.psd1'
+$envConfigPath = Join-Path $basePath "..\..\environments\dev.json"
+$configModulePsd1 = Join-Path $basePath "ConfigurationPackage\ConfigurationPackage.psd1" # Changed to backslash for consistency
+$azureModulePsd1 = Join-Path $basePath "..\OrchestratorAzure\OrchestratorAzure.psd1"
+$commonModuleRootPath = Join-Path $basePath "..\OrchestratorCommon"
+$nuspecFilePath = Join-Path $basePath "ConfigurationPackage.nuspec" # Ensure this is treated as a file
+$outputDirectory = Join-Path $basePath "..\..\Output"
 
- 
-Import-Module $configModulePath
-Import-Module $azureModulePath
-Initialize-12Configuration $envConfigPath
-Connect-12Azure
-
-
-# Import OrchestratorCommon module
-$moduleRoot = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) -ChildPath "..\OrchestratorCommon" # Applied robust path pattern
-if (Test-Path $moduleRoot) {
-    Import-Module $moduleRoot -Force
-    Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
-} else {
-    Write-Error "OrchestratorCommon module not found at $moduleRoot. Make sure the module is installed correctly."
+# --- Package Version Extraction ---
+Write-Host "Reading package version from: $nuspecFilePath" -ForegroundColor Cyan
+if (-not (Test-Path $nuspecFilePath)) {
+    Write-Error "Nuspec file not found at $nuspecFilePath. Please build the package first or check the path."
     exit 1
 }
-
-# Get the package version from the nuspec file
-$packagePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'ConfigurationPackage.nuspec'
-
-$nuspecContent = Get-Content $packagePath -Raw
-if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
+$nuspecContent = Get-Content $nuspecFilePath -Raw
+# Use double quotes for the regex string and escape backslashes for PowerShell regex.
+if ($nuspecContent -match "<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>") {
     $major = $matches[1]
     $minor = $matches[2]
     $patch = $matches[3]
     $version = "$major.$minor.$patch"
     Write-Host "Package version from nuspec: $version" -ForegroundColor Cyan
 } else {
-    Write-Error "Failed to find version in nuspec file."
+    Write-Error "Failed to find version in nuspec file: $nuspecFilePath"
     exit 1
 }
 
+# --- Final Package Path Construction ---
+$nupkgFilePath = Join-Path -Path $outputDirectory -ChildPath ("$PackageName.$version.nupkg")
+Write-Host "Expected package location: $nupkgFilePath" -ForegroundColor Cyan
 
+# --- Module Imports & Initialization ---
+Import-Module $configModulePsd1
+Import-Module $azureModulePsd1
+Initialize-12Configuration $envConfigPath # Uses $envConfigPath
+Connect-12Azure
 
-# Detect the latest package in the output directory
-$outputDirectory = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\Output'
-$PackagePath = Join-Path -Path $outputDirectory -ChildPath ("$PackageName.$version.nupkg")
-Write-Host "Using package path: $PackagePath" -ForegroundColor Cyan
+# Import OrchestratorCommon module
+if (Test-Path $commonModuleRootPath) {
+    Import-Module $commonModuleRootPath -Force
+    Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
+} else {
+    Write-Error "OrchestratorCommon module not found at $commonModuleRootPath. Make sure the module is installed correctly."
+    exit 1
+}
+
+# --- Main Script Logic ---
 
 # Verify the package exists
-if (-not (Test-Path $PackagePath)) {
-    Write-Error "Package not found at $PackagePath. Please build the package first."
+if (-not (Test-Path $nupkgFilePath)) {
+    Write-Error "Package not found at $nupkgFilePath. Please build the package first."
     exit 1
 }
 
-Write-Host "Publishing package $PackagePath..." -ForegroundColor Cyan
+Write-Host "Publishing package $nupkgFilePath..." -ForegroundColor Cyan
 
 # Retrieve the PAT securely
 # Access configuration values from the globally initialized configuration
@@ -128,7 +133,7 @@ $ArtifactsFeedUrl = $Global:12cConfig.artifactsFeedUrl
 
 # Check if essential config values were found
 if ([string]::IsNullOrEmpty($KeyVaultName) -or [string]::IsNullOrEmpty($TenantId) -or [string]::IsNullOrEmpty($SubscriptionId) -or [string]::IsNullOrEmpty($ArtifactsFeedUrl)) {
-    Write-Error "One or more required configuration values (KeyVaultName, TenantId, SubscriptionId, ArtifactsFeedUrl) could not be retrieved from the global configuration (expected in \$Global:12cConfig). Ensure Initialize-12Configuration has run successfully and set them."
+    Write-Error "One or more required configuration values (KeyVaultName, TenantId, SubscriptionId, ArtifactsFeedUrl) could not be retrieved from the global configuration (expected in \\$Global:12cConfig). Ensure Initialize-12Configuration has run successfully and set them."
     exit 1
 }
 
@@ -149,7 +154,7 @@ Ensure-NuGetFeedConfigured -FeedName $ArtifactsFeed -FeedUrl $ArtifactsFeedUrl -
 
 # Publish the package
 Write-Host "Pushing package to feed..." -ForegroundColor Cyan
-nuget push $PackagePath -Source $ArtifactsFeed -ApiKey "AzureDevOps"
+nuget push $nupkgFilePath -Source $ArtifactsFeed -ApiKey "AzureDevOps"
 
 # Check if nuget push was successful
 if ($LASTEXITCODE -ne 0) {
