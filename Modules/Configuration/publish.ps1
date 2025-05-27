@@ -17,9 +17,9 @@ $PackageName = "ConfigurationPackage"
 
 
 # Define variables at the top
-$envConfigPath = Join-Path $PSScriptRoot '..\..\environments\dev.json'
-$configModulePath = Join-Path $PSScriptRoot 'ConfigurationPackage/ConfigurationPackage.psd1'
-$azureModulePath = Join-Path $PSScriptRoot '../OrchestratorAzure/OrchestratorAzure.psd1'
+$envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\environments\dev.json'
+$configModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'ConfigurationPackage/ConfigurationPackage.psd1'
+$azureModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '../OrchestratorAzure/OrchestratorAzure.psd1'
 
  
 Import-Module $configModulePath
@@ -29,7 +29,7 @@ Connect-12Azure
 
 
 # Import OrchestratorCommon module
-$moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\OrchestratorCommon"
+$moduleRoot = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) -ChildPath "..\OrchestratorCommon" # Applied robust path pattern
 if (Test-Path $moduleRoot) {
     Import-Module $moduleRoot -Force
     Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
@@ -38,8 +38,7 @@ if (Test-Path $moduleRoot) {
     exit 1
 }
 
-# Define variables
-$envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\..\environments\dev.json"
+# Load environment configuration (this block was previously duplicated)
 if (Test-Path $envConfigPath) {
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $KeyVaultName = $envConfig.keyVaultName
@@ -54,7 +53,7 @@ if (Test-Path $envConfigPath) {
 
 
 # Get the package version from the nuspec file
-$packagePath = Join-Path $PSScriptRoot 'ConfigurationPackage.nuspec'
+$packagePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'ConfigurationPackage.nuspec'
 
 $nuspecContent = Get-Content $packagePath -Raw
 if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
@@ -71,7 +70,7 @@ if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
 
 
 # Detect the latest package in the output directory
-$outputDirectory = Join-Path $PSScriptRoot '..\..\Output'
+$outputDirectory = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\Output'
 $PackagePath = Join-Path -Path $outputDirectory -ChildPath ("$PackageName.$version.nupkg")
 Write-Host "Using package path: $PackagePath" -ForegroundColor Cyan
 
