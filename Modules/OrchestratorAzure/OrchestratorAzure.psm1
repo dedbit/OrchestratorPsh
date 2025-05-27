@@ -47,23 +47,19 @@ function Connect-12Azure {
 }
 
 # Function to connect to Azure using a certificate
-function Connect-ToAzureWithCertificate {
+function Connect-12AzureWithCertificate {
     [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$TenantId,
-
-        [Parameter(Mandatory = $true)]
-        [string]$SubscriptionId,
-
-        [Parameter(Mandatory = $true)]
-        [string]$CertificateThumbprint,
-
-        [Parameter(Mandatory = $true)]
-        [string]$ApplicationId
-    )
+    param ()
 
     try {
+        if (-not $global:12cConfig) {
+            throw "Global configuration variable '12cConfig' is not set. Please initialize it first."
+        }
+        $TenantId = $global:12cConfig.TenantId
+        $SubscriptionId = $global:12cConfig.SubscriptionId
+        $CertificateThumbprint = $global:12cConfig.certThumbprint
+        $ApplicationId = $global:12cConfig.appId
+
         Write-Host "Connecting to Azure using certificate authentication..." -ForegroundColor Cyan
 
         # Create a service principal connection using the certificate
@@ -174,4 +170,4 @@ function Get-ServicePrincipalObjectId {
 }
 
 # Export the functions
-Export-ModuleMember -Function Get-PATFromKeyVault, Connect-12Azure, Get-ServicePrincipalObjectId, Connect-ToAzureWithCertificate
+Export-ModuleMember -Function Get-PATFromKeyVault, Connect-12Azure, Get-ServicePrincipalObjectId, Connect-12AzureWithCertificate
