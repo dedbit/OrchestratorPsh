@@ -115,3 +115,68 @@ Remove-Item $testNuspec -ErrorAction SilentlyContinue
 Remove-Item $testOutDir -Recurse -ErrorAction SilentlyContinue
 
 Write-Host "\nManual tests complete." -ForegroundColor Cyan
+
+# --- Test Get-PackageVersionFromNuspec ---
+Write-Host "\nTesting Get-PackageVersionFromNuspec..." -ForegroundColor Cyan
+$testNuspec = Join-Path $env:TEMP "ManualTestVer.nuspec"
+Set-Content -Path $testNuspec -Value "<package><metadata><id>t</id><version>2.3.4</version><authors>a</authors><description>d</description></metadata></package>"
+$version = $null
+try {
+    $version = Get-PackageVersionFromNuspec -NuspecPath $testNuspec
+    $result = ($version -eq '2.3.4')
+    Write-TestResult 'Get-PackageVersionFromNuspec basic' $result
+} catch {
+    Write-TestResult 'Get-PackageVersionFromNuspec basic' $false
+    Write-Host $_
+}
+Remove-Item $testNuspec -ErrorAction SilentlyContinue
+
+# --- Test Confirm-DirectoryExists ---
+Write-Host "\nTesting Confirm-DirectoryExists..." -ForegroundColor Cyan
+$testDir = Join-Path $env:TEMP "ManualTestDir"
+if (Test-Path $testDir) { Remove-Item $testDir -Recurse -Force }
+try {
+    Confirm-DirectoryExists -Path $testDir
+    $result = Test-Path $testDir
+    Write-TestResult 'Confirm-DirectoryExists creates dir' $result
+} catch {
+    Write-TestResult 'Confirm-DirectoryExists creates dir' $false
+    Write-Host $_
+}
+Remove-Item $testDir -Recurse -ErrorAction SilentlyContinue
+
+# --- Test Set-PackageVersionIncrement ---
+Write-Host "\nTesting Set-PackageVersionIncrement..." -ForegroundColor Cyan
+$testNuspec = Join-Path $env:TEMP "ManualTestInc.nuspec"
+Set-Content -Path $testNuspec -Value "<package><metadata><id>t</id><version>1.2.3</version><authors>a</authors><description>d</description></metadata></package>"
+$newVer = $null
+try {
+    $newVer = Set-PackageVersionIncrement -NuspecPath $testNuspec
+    $result = ($newVer -eq '1.2.4')
+    Write-TestResult 'Set-PackageVersionIncrement basic' $result
+} catch {
+    Write-TestResult 'Set-PackageVersionIncrement basic' $false
+    Write-Host $_
+}
+Remove-Item $testNuspec -ErrorAction SilentlyContinue
+
+# --- Test Remove-OldPackageVersions ---
+Write-Host "\nTesting Remove-OldPackageVersions..." -ForegroundColor Cyan
+$testOutDir = Join-Path $env:TEMP "ManualTestOldPkg"
+if (Test-Path $testOutDir) { Remove-Item $testOutDir -Recurse -Force }
+New-Item -ItemType Directory -Path $testOutDir | Out-Null
+$baseName = "TestPkg"
+$keepVer = "1.0.2"
+$files = @("$baseName.1.0.1.nupkg", "$baseName.1.0.2.nupkg", "$baseName.1.0.3.nupkg")
+foreach ($f in $files) { Set-Content -Path (Join-Path $testOutDir $f) -Value "dummy" }
+try {
+    Remove-OldPackageVersions -OutputDirectory $testOutDir -PackageBaseName $baseName -VersionToKeep $keepVer
+    $remaining = @(Get-ChildItem -Path $testOutDir -Filter "*.nupkg" | Select-Object -ExpandProperty Name)
+    Write-Host "Remaining files after Remove-OldPackageVersions: $($remaining -join ', ')" -ForegroundColor Yellow
+    $result = ($remaining.Count -eq 1 -and $remaining[0] -eq "$baseName.$keepVer.nupkg")
+    Write-TestResult 'Remove-OldPackageVersions keeps only specified version' $result
+} catch {
+    Write-TestResult 'Remove-OldPackageVersions keeps only specified version' $false
+    Write-Host $_
+}
+Remove-Item $testOutDir -Recurse -ErrorAction SilentlyContinue
