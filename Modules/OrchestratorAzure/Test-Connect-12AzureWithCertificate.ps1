@@ -8,7 +8,7 @@ $modulePath = Join-Path $PSScriptRoot '..' '..' 'Modules' 'OrchestratorAzure' 'O
 $testScript = @'
 try {
     # Load configuration before running the test
-    $configModulePath = Join-Path $PSScriptRoot ".." ".." "Modules" "Configuration" "ConfigurationPackage.psd1"
+    $configModulePath = Join-Path $PSScriptRoot ".." ".." "Modules" "Configuration" "ConfigurationPackage" "ConfigurationPackage.psd1"
     Import-Module -Name $configModulePath -Force
     Initialize-12Configuration
 

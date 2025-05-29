@@ -13,7 +13,8 @@ function Initialize-12Configuration {
     $configFilePath = if ($null -ne $ConfigFilePathOverride -and (Test-Path -Path $ConfigFilePathOverride)) {
         $ConfigFilePathOverride
     } else {
-        Join-Path -Path (Split-Path -Path (Get-PSCommandPath) -Parent) -ChildPath "..\..\environments\dev.json"
+        # Adjusted path: environments is two levels up from ConfigurationPackage.psm1
+        Join-Path -Path (Split-Path -Path (Get-PSCommandPath) -Parent) -ChildPath "..\..\..\environments\dev.json"
     }
     # ls $configFilePath
 

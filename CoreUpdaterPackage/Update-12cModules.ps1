@@ -9,9 +9,13 @@
 
 . "$PSScriptRoot\functions.ps1"
 
-Import-Module "$PSScriptRoot\..\Modules\Configuration\ConfigurationPackage.psd1" -Force
+# Import the Configuration module from the correct subfolder
+Import-Module "$PSScriptRoot\..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1" -Force
 Import-Module "$PSScriptRoot\..\Modules\OrchestratorAzure\OrchestratorAzure.psd1" -Force
-Initialize-12Configuration
+
+# Initialize-12Configuration should be called with the path to dev.json
+$envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\environments\dev.json"
+Initialize-12Configuration $envConfigPath
 Connect-12Azure
 
 # Import OrchestratorCommon module
@@ -57,44 +61,51 @@ try {
     foreach ($packageName in $packagesList) {
         Write-Host "\nChecking package: $packageName" -ForegroundColor Cyan
         $installed = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
-        # Query the repository for the latest available version
+        $loadedInSession = Get-Module -Name $packageName | Sort-Object Version -Descending | Select-Object -First 1
         $repoModules = Find-Module -Name $packageName -Repository $repoName -ErrorAction SilentlyContinue
         if ($repoModules) {
             $latestVersion = $repoModules.Version
-            if ($installed) {
-                # If installed version is older, uninstall and upgrade to latest
-                if ([version]$installed.Version -lt [version]$latestVersion) {
-                    Write-Host "  Newer version $latestVersion available. Upgrading $packageName..." -ForegroundColor Yellow
-                    Uninstall-Module -Name $packageName -AllVersions -Force
-                    Install-Module -Name $packageName -Repository $repoName -RequiredVersion $latestVersion -Force -Scope AllUsers
-                    $installed2 = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
-                    if ($installed2 -and $installed2.Version -eq $latestVersion) {
-                        Write-Host "  Package $packageName upgraded to version $($installed2.Version)." -ForegroundColor Green
-                    } else {
-                        Write-Error "  Failed to upgrade $packageName to $latestVersion."
-                    }
+            $loadedVersion = $null
+            if ($loadedInSession) {
+                $loadedVersion = $loadedInSession.Version
+                if ([version]$loadedVersion -eq [version]$latestVersion) {
+                    Write-Host "  Module $packageName version $loadedVersion is already loaded and up to date. Skipping update." -ForegroundColor Green
+                    continue
                 } else {
-                    # If already up to date, report success
-                    Write-Host "  Package $packageName is up to date (version $($installed.Version))." -ForegroundColor Green
+                    Write-Host "  Loaded version $loadedVersion is older than latest $latestVersion. Will update." -ForegroundColor Yellow
                 }
+            } elseif ($installed) {
+                Write-Host "  Module $packageName is installed but not loaded in session." -ForegroundColor Yellow
             } else {
-                # If not installed, install the latest version
-                Write-Host "  Installing $packageName version $latestVersion from $repoName..." -ForegroundColor Yellow
-                Install-Module -Name $packageName -Repository $repoName -RequiredVersion $latestVersion -Force -Scope AllUsers
-                $installed2 = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
-                if ($installed2 -and $installed2.Version -eq $latestVersion) {
-                    Write-Host "  Package $packageName version $($installed2.Version) installed successfully." -ForegroundColor Green
-                } else {
-                    Write-Error "  Failed to install package $packageName version $latestVersion from $repoName."
+                Write-Host "  Module $packageName is not installed or loaded. Will install latest version $latestVersion." -ForegroundColor Yellow
+            }
+            # Uninstall all older versions before installing latest
+            if ($installed) {
+                $olderVersions = Get-InstalledModule -Name $packageName -AllVersions | Where-Object { [version]$_.Version -lt [version]$latestVersion }
+                foreach ($old in $olderVersions) {
+                    Write-Host "  Removing old version $($old.Version) of $packageName..." -ForegroundColor Yellow
+                    Uninstall-Module -Name $packageName -RequiredVersion $old.Version -Force
                 }
             }
+            # Install or update to latest version
+            Install-Module -Name $packageName -Repository $repoName -RequiredVersion $latestVersion -Force -Scope AllUsers
+            $installed2 = Get-InstalledModule -Name $packageName -ErrorAction SilentlyContinue
+            if ($installed2 -and $installed2.Version -eq $latestVersion) {
+                Write-Host "  Package $packageName version $($installed2.Version) installed/updated successfully." -ForegroundColor Green
+                # Remove all versions older than the loaded/updated version
+                $allVersions = Get-InstalledModule -Name $packageName -AllVersions | Where-Object { [version]$_.Version -lt [version]$latestVersion }
+                foreach ($old in $allVersions) {
+                    Write-Host "  Removing old version $($old.Version) of $packageName after update..." -ForegroundColor Yellow
+                    Uninstall-Module -Name $packageName -RequiredVersion $old.Version -Force
+                }
+            } else {
+                Write-Error "  Failed to install/update package $packageName version $latestVersion from $repoName."
+            }
         } else {
-            # If package not found in repository, warn and skip
             Write-Warning "  Package $packageName not found in repository $repoName. Skipping."
         }
     }
 } catch {
-    # Catch and report any errors that occur during the process
     Write-Error "Error processing packages: $($_.Exception.Message)"
 }
 

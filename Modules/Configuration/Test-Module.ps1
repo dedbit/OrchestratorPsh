@@ -2,7 +2,7 @@
 # Script to test the Configuration module
 
 # Modify the module import path to be relative to the script
-$modulePath = Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path -Parent) -ChildPath "ConfigurationPackage.psm1"
+$modulePath = Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path -Parent) -ChildPath "ConfigurationPackage/ConfigurationPackage.psm1"
 
 # Import the module
 Import-Module -Name $modulePath -Force
