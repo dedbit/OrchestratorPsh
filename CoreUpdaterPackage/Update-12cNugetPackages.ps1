@@ -8,7 +8,7 @@
 
 . .\functions.ps1
 
-Import-Module ..\Modules\Configuration\ConfigurationPackage.psd1
+Import-Module ..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1
 Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
 Initialize-12Configuration
 Connect-12Azure

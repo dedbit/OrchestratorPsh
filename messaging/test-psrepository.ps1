@@ -147,7 +147,7 @@ function Run-PSRepositoryModuleTests {
 
 # filepath: c:\dev\12C\OrchestratorPsh\messaging\test-psrepository.ps1
 # Test script for PSRepository and MessagingModule
-Import-Module ..\Modules\Configuration\ConfigurationPackage.psd1
+Import-Module ..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1
 Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
 Initialize-12Configuration ..\environments\dev.json
 Connect-12Azure

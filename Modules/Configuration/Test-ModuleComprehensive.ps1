@@ -28,7 +28,7 @@ $testEnvFile = Join-Path -Path $scriptRoot -ChildPath "test-environment.json"
 "Created test environment file at $testEnvFile" | Out-File -FilePath $logFile -Append
 
 # Modify the module import path to be relative to the script
-$modulePath = Join-Path -Path $scriptRoot -ChildPath "ConfigurationPackage/ConfigurationPackage.psm1"
+$modulePath = Join-Path -Path $scriptRoot -ChildPath "ConfigurationPackage\ConfigurationPackage.psm1"
 
 # Import the module
 [Console]::WriteLine("Importing module from $modulePath...")
@@ -98,7 +98,7 @@ try {
     Remove-Module -Name ConfigurationPackage -ErrorAction SilentlyContinue
     
     # Import via the manifest
-    $manifestPath = Join-Path -Path $scriptRoot -ChildPath "ConfigurationPackage/ConfigurationPackage.psd1"
+    $manifestPath = Join-Path -Path $scriptRoot -ChildPath "ConfigurationPackage\ConfigurationPackage.psd1"
     Import-Module -Name $manifestPath -Force
     
     # Verify the module is imported

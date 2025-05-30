@@ -20,7 +20,7 @@ Install-Module -Name ConfigurationPackage -Scope AllUsers -Repository LocalNuget
 
 ```powershell
 # Import the module directly from source
-Import-Module -Path "C:\dev\12C\OrchestratorPsh\Modules\Configuration\ConfigurationPackage.psd1" -Force
+Import-Module -Path "C:\dev\12C\OrchestratorPsh\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1" -Force
 ```
 
 ### Option 3: Manually copy to system modules folder

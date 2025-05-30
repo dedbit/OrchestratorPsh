@@ -2,7 +2,7 @@
 # Import the Az module to interact with Azure services
 # Import-Module Az
 
-Import-Module ..\Modules\Configuration\ConfigurationPackage.psd1
+Import-Module ..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1
 Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
 Initialize-12Configuration ..\environments\dev.json
 Connect-12Azure
