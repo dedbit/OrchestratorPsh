@@ -24,7 +24,7 @@ PowerShell-Based System Architecture for Package Management
 #### 4. **Integration Points**
 #### 3. **Integration Points**
 - **Artifact Feed API Integration**: Supports APIs like Azure DevOps and NuGet for fetching packages.
-- **Key Vault**: Contains credentials, such as the Personal Access Token (PAT) for Azure DevOps. 
+- **Key Vault**: Contains credentials, such as the Personal Access Token (PAT) and the NuGet package list as secrets.
 
 #### 5. **Deployment Considerations**
 

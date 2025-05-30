@@ -81,3 +81,26 @@ Setup modules/configuration module same as messaging.
     - Implemented comprehensive test suite for module validation
     - Added Architecture.md with module design and usage documentation
     - Done.
+
+## Configuration
+
+- The list of NuGet packages to update is stored as a secret (default: `NugetPackagesList`) in Azure Key Vault, not in a local packages.json file.
+- To update the package list, use the helper script:
+
+```powershell
+pwsh Infrastructure/set-nuget-packages-secret.ps1 -KeyVaultName <your-keyvault-name> -PackagesListPath <path-to-json> -SecretName NugetPackagesList
+```
+
+## Relevant Configuration Files
+- `environments/dev.json` (environment and Key Vault info)
+- `Infrastructure/set-nuget-packages-secret.ps1` (helper to upload package list)
+
+## Architecture Overview
+- See [Architecture.md](./Architecture.md) for a detailed overview.
+
+### Components
+- **Updater Script**: Retrieves the package list and PAT from Key Vault, checks for updates, and installs packages.
+- **Key Vault**: Stores secrets such as the PAT and the NuGet package list.
+- **Azure DevOps Artifacts Feed**: Source for NuGet packages.
+- **Local Packages Directory**: Stores downloaded/installed packages.
+- **Configuration Files**: Store environment and connection info.

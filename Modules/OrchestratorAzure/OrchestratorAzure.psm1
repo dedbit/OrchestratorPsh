@@ -71,7 +71,45 @@ function Connect-12AzureWithCertificate {
     }
 }
 
-# Function to retrieve the Personal Access Token (PAT) from Azure Key Vault
+# Function to retrieve a secret from Azure Key Vault (generalized)
+function Get-SecretFromKeyVault {
+    param (
+        [string]$KeyVaultName,
+        [string]$SecretName,
+        [string]$TenantId,
+        [string]$SubscriptionId,
+        [switch]$ForceNewLogin
+    )
+    try {
+        $connected = Connect-12Azure -ForceNewLogin:$ForceNewLogin
+        if (-not $connected) {
+            throw "Failed to connect to Azure"
+        }
+        $secret = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -ErrorAction Stop
+        try {
+            if ($secret.SecretValue -is [System.Security.SecureString]) {
+                $secretValueText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+                    [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret.SecretValue))
+            } elseif ($null -ne $secret.SecretValueText) {
+                $secretValueText = $secret.SecretValueText
+            } else {
+                throw "Could not extract secret value using known methods."
+            }
+        } catch {
+            Write-Error "Error extracting secret value: $($_.Exception.Message)"
+            throw
+        }
+        if ([string]::IsNullOrEmpty($secretValueText)) {
+            Write-Warning "Retrieved secret is null or empty. Please check the Key Vault secret."
+        }
+        return $secretValueText
+    } catch {
+        Write-Error "Error in Get-SecretFromKeyVault: $($_.Exception.Message)"
+        throw
+    }
+}
+
+# Wrapper for backward compatibility
 function Get-PATFromKeyVault {
     param (
         [string]$KeyVaultName,
@@ -80,48 +118,7 @@ function Get-PATFromKeyVault {
         [string]$SubscriptionId,
         [switch]$ForceNewLogin
     )
-
-    try {
-        # Connect to Azure using the extracted connection function
-        $connected = Connect-12Azure -ForceNewLogin:$ForceNewLogin
-        if (-not $connected) {
-            throw "Failed to connect to Azure"
-        }
-
-        # Retrieve the secret from Azure Key Vault
-        $secret = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -ErrorAction Stop
-        
-        # Extract the secret value properly - handle different possible formats
-        try {
-            # First try the newer way (SecretValue as SecureString)
-            if ($secret.SecretValue -is [System.Security.SecureString]) {
-                $secretValueText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
-                    [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret.SecretValue))
-            }
-            # Then try direct text (older versions)
-            elseif ($null -ne $secret.SecretValueText) {
-                $secretValueText = $secret.SecretValueText
-            }
-            else {
-                throw "Could not extract secret value using known methods."
-            }
-        }
-        catch {
-            Write-Error "Error extracting secret value: $($_.Exception.Message)"
-            throw
-        }
-        
-        # Validate the extracted secret
-        if ([string]::IsNullOrEmpty($secretValueText)) {
-            Write-Warning "Retrieved PAT is null or empty. Please check the Key Vault secret."
-        }
-        
-        return $secretValueText
-    }
-    catch {
-        Write-Error "Error in Get-PATFromKeyVault: $($_.Exception.Message)"
-        throw
-    }
+    return Get-SecretFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId -ForceNewLogin:$ForceNewLogin
 }
 
 # Function to convert an Application ID to Object ID (Service Principal ID)

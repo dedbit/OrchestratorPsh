@@ -25,7 +25,6 @@ if (Test-Path $moduleRoot) {
 
 # Define file paths and variables
 $envConfigPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\environments\dev.json"
-$packagesJsonPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "packages.json"
 $localPackagesDir = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Packages"
 $nugetPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Tools\nuget.exe"
 
@@ -54,12 +53,15 @@ if (Test-Path $envConfigPath) {
     exit 1
 }
 
-# Load packages list
-if (Test-Path $packagesJsonPath) {
-    $packagesList = @(Get-Content -Path $packagesJsonPath -Raw | ConvertFrom-Json)
-    Write-Host "Found $(($packagesList | Measure-Object).Count) packages in packages.json" -ForegroundColor Cyan
-} else {
-    Write-Error "Could not find packages.json at $packagesJsonPath. Aborting script."
+# Retrieve the package list from Key Vault
+$PackagesSecretName = "NugetPackagesList"  # Name of the secret in Key Vault
+try {
+    Write-Host "Retrieving package list from Key Vault..." -ForegroundColor Yellow
+    $packagesJson = Get-SecretFromKeyVault -KeyVaultName $KeyVaultName -SecretName $PackagesSecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
+    $packagesList = @($packagesJson | ConvertFrom-Json)
+    Write-Host "Found $(($packagesList | Measure-Object).Count) packages in Key Vault secret '$PackagesSecretName'" -ForegroundColor Cyan
+} catch {
+    Write-Error "Failed to retrieve or parse package list from Key Vault: $($_.Exception.Message)"
     exit 1
 }
 
