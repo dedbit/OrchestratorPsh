@@ -4,13 +4,19 @@
 $ErrorActionPreference = 'Stop'
 
 $testScripts = @(
-    @{ Path = "CoreUpdaterPackage"; Script = "TestArtifactsFeed.ps1" },
-    @{ Path = "messaging"; Script = "test-keyvault-fixed.ps1" },
-    @{ Path = "messaging"; Script = "test-psrepository.ps1" },
-    @{ Path = "Modules/Configuration"; Script = "Test-Module.ps1" },
-    @{ Path = "Modules/Configuration"; Script = "Test-ModuleComprehensive.ps1" },
-    @{ Path = "Modules/OrchestratorAzure"; Script = "Test-Module.ps1" },
-    @{ Path = "Modules/OrchestratorCommon"; Script = "Test-Module.ps1" }
+    @{ Path = "CoreUpdaterPackage"; Script = "test-artifacts-feed.ps1" },
+    @{ Path = "Modules/MessagingModule"; Script = "test-keyvault-fixed.ps1" },
+    @{ Path = "Modules/MessagingModule"; Script = "test-psrepository.ps1" },
+    @{ Path = "Modules/Configuration"; Script = "test-module.ps1" },
+    @{ Path = "Modules/Configuration"; Script = "test-module-comprehensive.ps1" },
+    @{ Path = "Modules/CommonConnections"; Script = "test-module.ps1" },
+    @{ Path = "Modules/CommonConnections"; Script = "test-module-comprehensive.ps1" },
+    @{ Path = "Modules/CosmosDB"; Script = "test-module.ps1" },
+    @{ Path = "Modules/CosmosDB"; Script = "test-module-comprehensive.ps1" },
+    @{ Path = "Modules/OrchestratorAzure"; Script = "test-module.ps1" },
+    @{ Path = "Modules/OrchestratorAzure"; Script = "test-connect-12azure-with-certificate.ps1" },
+    @{ Path = "Modules/OrchestratorCommon"; Script = "test-module.ps1" },
+    @{ Path = "Modules/Packaging"; Script = "test-manual-packaging-functions.ps1" }
 )
 
 foreach ($test in $testScripts) {

@@ -5,11 +5,11 @@ param(
     [switch]$Force
 )
 
-Write-Host "Synchronizing parameters between environment config and parameters file..." -ForegroundColor Cyan
+# Define paths at top of script
+$envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\environments\dev.json'
+$paramFilePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'main.parameters.json'
 
-# Load environment configuration
-$envConfigPath = "..\environments\dev.json"
-$paramFilePath = "main.parameters.json"
+Write-Host "Synchronizing parameters between environment config and parameters file..." -ForegroundColor Cyan
 
 if (-not (Test-Path $envConfigPath)) {
     Write-Warning "Could not find environment config at $envConfigPath. Will continue with parameter file values."
@@ -32,6 +32,7 @@ $envSubscriptionId = $envConfig.subscriptionId
 $envKeyVaultName = $envConfig.keyVaultName
 $envResourceGroupName = $envConfig.resourceGroupName
 $envStorageAccountName = $envConfig.storageAccountName
+$envCosmosDbAccountName = $envConfig.cosmosDbAccountName
 $envLocation = $envConfig.location
 $envAppObjectId = $envConfig.appObjectId
 
@@ -41,6 +42,7 @@ $paramSubscriptionId = $paramFile.parameters.subscriptionId.value
 $paramKeyVaultName = $paramFile.parameters.keyVaultName.value
 $paramResourceGroupName = $paramFile.parameters.resourceGroupName.value
 $paramStorageAccountName = $paramFile.parameters.storageAccountName.value
+$paramCosmosDbAccountName = $paramFile.parameters.cosmosDbAccountName.value
 $paramLocation = $paramFile.parameters.location.value
 $paramAppObjectId = $paramFile.parameters.appObjectId.value
 
@@ -66,6 +68,7 @@ Compare-Values "Subscription ID" $envSubscriptionId $paramSubscriptionId
 Compare-Values "Key Vault Name" $envKeyVaultName $paramKeyVaultName
 Compare-Values "Resource Group Name" $envResourceGroupName $paramResourceGroupName
 Compare-Values "Storage Account Name" $envStorageAccountName $paramStorageAccountName
+Compare-Values "Cosmos DB Account Name" $envCosmosDbAccountName $paramCosmosDbAccountName
 Compare-Values "Location" $envLocation $paramLocation
 Compare-Values "App Object ID" $envAppObjectId $paramAppObjectId
 
@@ -86,6 +89,7 @@ if ($sync -eq "y" -or $sync -eq "Y") {
     $paramFile.parameters.resourceGroupName.value = $envResourceGroupName
     $paramFile.parameters.location.value = $envLocation
     $paramFile.parameters.storageAccountName.value = $envStorageAccountName
+    $paramFile.parameters.cosmosDbAccountName.value = $envCosmosDbAccountName
     $paramFile.parameters.appObjectId.value = $envAppObjectId
     
     # Save updated parameters file with warning header

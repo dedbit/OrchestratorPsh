@@ -11,6 +11,13 @@ General guidance:
 
 Powershell guidance:
 - Avoid having multiple consecutive lines of Write-Host. Instead combine them into one Write-host statement. 
+- Use early return statements for validation checks.
+- Avoid nested if statements; check conditions and exit immediately if not met.
+- Keep the code structure simple and flat.
+- Create generic test functions instead of complex validation logic. E.g. Assert-StringNotEmpty that checks that value is not null, is a string, is not empty and throws an exception. 
+- Try to keep the size of any function at less than 50 lines. 
+- Put variables in the top of functions or scripts. 
+
 
 Readme.md file should contain following information:
 - Only include elements that are clearly included in the repository or requested directly in prompt. 

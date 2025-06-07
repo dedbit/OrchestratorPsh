@@ -1,5 +1,9 @@
 # PackageUpdater.ps1
 
+# Define paths at top of script
+$scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
+$LogFilePath = Join-Path $scriptRoot 'PackageUpdater.log'
+
 # Import necessary modules
 Import-Module -Name Az.Accounts
 Import-Module -Name Az.Artifacts
@@ -11,10 +15,6 @@ $CheckIntervalMinutes = 10
 
 # Add a new parameter for the package name to monitor
 $PackageName = "YourPackageName"  # Replace with the actual package name to monitor
-
-# Update the log file path to use the script location
-$ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$LogFilePath = Join-Path -Path $ScriptDirectory -ChildPath "PackageUpdater.log"
 
 
 

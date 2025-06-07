@@ -2,6 +2,9 @@
 # This script permanently deletes all resources created by the Bicep deployment
 # including the resource group and removes Key Vault from the Azure recycle bin
 
+# Define paths at top of script
+$syncParametersPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'sync-parameters.ps1'
+
 # Default parameters - will be overridden by values from main.parameters.json
 param(
     [string]$ResourceGroupName = "orchestratorPsh2-dev-rg",
@@ -11,7 +14,7 @@ param(
 # Synchronize parameters from environments/dev.json to main.parameters.json
 Write-Host "Using sync-parameters.ps1 to synchronize parameters..." -ForegroundColor Yellow
 # The script already checks if environments/dev.json exists
-& ".\sync-parameters.ps1" -Force
+& $syncParametersPath -Force
 
 # Get parameters from main.parameters.json
 $parameterFilePath = "main.parameters.json"

@@ -4,6 +4,76 @@ param(
     [string]$GithubRepoUrl = ""
 )
 
+function Convert-DeploymentOutputs {
+    param(
+        [Parameter(Mandatory = $true)]
+        $DeploymentOutputs
+    )
+    $outputTypeName = $DeploymentOutputs.GetType().Name
+    if ($outputTypeName -eq "JObject" -or $DeploymentOutputs.GetType().FullName -contains "Newtonsoft.Json.Linq.JObject") {
+        Write-Host "Converting JObject to PowerShell object..." -ForegroundColor Yellow
+        $DeploymentOutputs = $DeploymentOutputs.ToString() | ConvertFrom-Json
+    } elseif ($DeploymentOutputs -is [string]) {
+        Write-Host "Converting JSON string to PowerShell object..." -ForegroundColor Yellow
+        $DeploymentOutputs = $DeploymentOutputs | ConvertFrom-Json
+    }
+    return $DeploymentOutputs
+}
+
+function Get-DeploymentOutputValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        $DeploymentOutputs,
+        [Parameter(Mandatory = $true)]
+        [string]$PropertyName
+    )
+    $value = $DeploymentOutputs.$PropertyName
+    if ($value -is [Newtonsoft.Json.Linq.JValue]) {
+        return $value.Value
+    } else {
+        return $value
+    }
+}
+
+function Ensure-KeyVaultSecret {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$VaultName,
+        [Parameter(Mandatory = $true)]
+        [string]$SecretName,
+        [Parameter(Mandatory = $true)]
+        [string]$InitialValue
+    )
+    try {
+        $secret = Get-AzKeyVaultSecret -VaultName $VaultName -Name $SecretName -ErrorAction SilentlyContinue
+        if ($null -eq $secret) {
+            Set-AzKeyVaultSecret -VaultName $VaultName -Name $SecretName -SecretValue (ConvertTo-SecureString $InitialValue -AsPlainText -Force)
+            Write-Host "PAT secret '$SecretName' was not found and has been created with an initial value in Key Vault '$VaultName'. Please update it manually with the correct PAT." -ForegroundColor Green
+        } else {
+            Write-Host "PAT secret '$SecretName' already exists in Key Vault '$VaultName'. No action taken." -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "Error checking or setting PAT secret '$SecretName' in Key Vault '$VaultName': $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+
+# Define paths at top of script
+$scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
+$functionsPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\CoreUpdaterPackage\functions.ps1'
+$syncParametersPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'sync-parameters.ps1'
+$parameterFilePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'main.parameters.json'
+$templateFilePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'main.bicep'
+
+# Import required modules
+$orchestratorAzurePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Modules\OrchestratorAzure\OrchestratorAzure.psm1'
+$configurationPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psm1'
+
+Import-Module $orchestratorAzurePath -Force
+Import-Module $configurationPath -Force
+
+# Initialize configuration
+Initialize-12Configuration
+
 # Get the GitHub repository URL from git configuration if not provided as parameter
 if ([string]::IsNullOrEmpty($GithubRepoUrl)) {
     $repoUrl = git config --get remote.origin.url
@@ -19,17 +89,15 @@ $currentObjectId = $currentUser.Id
 Write-Host "Current object ID: $currentObjectId" -ForegroundColor Yellow
 
 # Import Get-ScriptRoot function from CoreUpdaterPackage\functions.ps1
-. "c:\dev\12C\OrchestratorPsh\CoreUpdaterPackage\functions.ps1"
+. $functionsPath
 
 # Define root directory for the project
-$projectRootPath = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$projectRootPath = Split-Path -Parent (Split-Path -Parent $scriptRoot)
 if (-Not $projectRootPath) {
-    $projectRootPath = "c:\dev\12C\OrchestratorPsh"
+    $projectRootPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..'
 }
 
 # Ensure paths for sync-parameters.ps1 and main.parameters.json are correct
-$syncParametersPath = Join-Path -Path $PSScriptRoot -ChildPath "sync-parameters.ps1"
-$parameterFilePath = Join-Path -Path $PSScriptRoot -ChildPath "main.parameters.json"
 
 Write-Host "Using sync-parameters.ps1 to synchronize parameters..." -ForegroundColor Yellow
 # Call sync-parameters with Force parameter to update main.parameters.json from dev.json
@@ -78,7 +146,6 @@ Write-Host "  Resource Group: $($parameterContent.parameters.resourceGroupName.v
 
 # Deploy the Bicep template at subscription level
 Write-Host "Deploying Bicep template at subscription level..." -ForegroundColor Green
-$templateFilePath = Join-Path -Path $PSScriptRoot -ChildPath "main.bicep"
 Write-Host "Using template file: $templateFilePath" -ForegroundColor Green
 Write-Host "Using parameter file: $parameterFilePath" -ForegroundColor Green
 New-AzSubscriptionDeployment `
@@ -99,27 +166,35 @@ if ($subscriptionDeployment) {
 
 Write-Host "Deployment completed."
 
+
+
 # --- Post-deployment: Set PAT secret only if not present ---
 $patSecretName = "PAT"
 $initialSecretValue = "INITIAL_PAT_VALUE_TO_BE_REPLACED_MANUALLY" # Placeholder value
 
 # Check if Key Vault exists (determined earlier in the script)
 if ($keyVaultExists) {
-    try {
-        # Attempt to retrieve the secret
-        $patSecret = Get-AzKeyVaultSecret -VaultName $keyVaultName -Name $patSecretName -ErrorAction SilentlyContinue
-
-        if ($null -eq $patSecret) {
-            # Secret does not exist, so create it
-            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $patSecretName -SecretValue (ConvertTo-SecureString $initialSecretValue -AsPlainText -Force)
-            Write-Host "PAT secret '$patSecretName' was not found and has been created with an initial value in Key Vault '$keyVaultName'. Please update it manually with the correct PAT." -ForegroundColor Green
-        } else {
-            # Secret already exists
-            Write-Host "PAT secret '$patSecretName' already exists in Key Vault '$keyVaultName'. No action taken." -ForegroundColor Yellow
-        }
-    } catch {
-        Write-Host "Error checking or setting PAT secret '$patSecretName' in Key Vault '$keyVaultName': $($_.Exception.Message)" -ForegroundColor Red
-    }
+    Ensure-KeyVaultSecret -VaultName $keyVaultName -SecretName $patSecretName -InitialValue $initialSecretValue
 } else {
     Write-Host "Key Vault '$keyVaultName' not found. Cannot check or create PAT secret." -ForegroundColor Red
 }
+
+# --- Post-deployment: Set Cosmos DB connection string secret ---
+try {
+    # Get the Cosmos DB connection string from deployment outputs
+    $deploymentOutputs = $subscriptionDeployment.Outputs.deploymentOutputs.Value
+    $deploymentOutputs = Convert-DeploymentOutputs $deploymentOutputs
+    $cosmosDbAccountName = Get-DeploymentOutputValue $deploymentOutputs 'cosmosDbAccountName'
+    $resourceGroupName = Get-DeploymentOutputValue $deploymentOutputs 'resourceGroupName'
+    Write-Host "Getting connection string for Cosmos DB account: $cosmosDbAccountName in resource group: $resourceGroupName" -ForegroundColor Yellow
+    # Get the primary connection string
+    $cosmosDbKeys = Invoke-AzResourceAction -Action listConnectionStrings -ResourceType "Microsoft.DocumentDB/databaseAccounts" -ResourceGroupName $resourceGroupName -ResourceName $cosmosDbAccountName -Force
+    $cosmosDbConnectionString = $cosmosDbKeys.connectionStrings[0].connectionString
+    # Use the new function to set the secret
+    Set-12cKeyVaultSecret -SecretName "CosmosDbConnectionString" -SecretValue $cosmosDbConnectionString
+    Write-Host "Cosmos DB connection string has been stored in Key Vault." -ForegroundColor Green
+} catch {
+    Write-Host "Error setting Cosmos DB connection string secret: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+

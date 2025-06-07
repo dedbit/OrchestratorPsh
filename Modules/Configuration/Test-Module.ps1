@@ -1,8 +1,9 @@
-# Test-Module.ps1
+# test-module.ps1
 # Script to test the Configuration module
 
-# Modify the module import path to be relative to the script
-$modulePath = Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path -Parent) -ChildPath "ConfigurationPackage/ConfigurationPackage.psm1"
+# Define paths at top of script
+$modulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'ConfigurationPackage\ConfigurationPackage.psm1'
+$customConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\environments\dev.json'
 
 # Import the module
 Import-Module -Name $modulePath -Force
@@ -15,8 +16,7 @@ try {
     Write-Host "Initialize-12Configuration executed successfully with default path." -ForegroundColor Green
 
     # Test with custom path
-    $customPath = Join-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Path -Parent) -ChildPath "..\..\environments\dev.json"
-    Initialize-12Configuration -ConfigFilePathOverride $customPath
+    Initialize-12Configuration -ConfigFilePathOverride $customConfigPath
     Write-Host "Initialize-12Configuration executed successfully with custom path." -ForegroundColor Green
 } catch {
     Write-Error "Initialize-12Configuration test failed: $($_.Exception.Message)"

@@ -1,8 +1,10 @@
 # verify-config.ps1
 # This script verifies that the environment configuration is properly loaded
 
+# Define paths at top of script
+$envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\environments\dev.json'
+
 # Load environment configuration
-$envConfigPath = "..\environments\dev.json"
 if (Test-Path $envConfigPath) {    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $tenantId = $envConfig.tenantId
     $subscriptionId = $envConfig.subscriptionId

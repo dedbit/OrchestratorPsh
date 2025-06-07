@@ -3,7 +3,7 @@
     RootModule = 'Packaging.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.0'
+    ModuleVersion = '1.0.15'
 
     # ID used to uniquely identify this module
     GUID = '42f80e65-ae99-424e-9d8b-aa9a7d25df39' # Replaced New-Guid with a static GUID
@@ -110,3 +110,19 @@
     # Default prefix for commands exported from this module. Override a command prefix using the Export-ModuleMember cmdlet. Default is to export all commands with no prefix.
     # DefaultCommandPrefix = ''
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

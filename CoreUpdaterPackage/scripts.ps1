@@ -1,7 +1,13 @@
-cd C:\dev\12C\OrchestratorPsh\messaging
-Import-Module ..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1
-Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
-Initialize-12Configuration ..\environments\dev.json
+# Define paths at top of script
+$scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
+$configModulePath = Join-Path $scriptRoot '..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1'
+$orchestratorAzureModulePath = Join-Path $scriptRoot '..\Modules\OrchestratorAzure\OrchestratorAzure.psd1'
+$envConfigPath = Join-Path $scriptRoot '..\environments\dev.json'
+
+cd $scriptRoot
+Import-Module $configModulePath
+Import-Module $orchestratorAzureModulePath
+Initialize-12Configuration $envConfigPath
 Connect-12Azure
 
 
@@ -18,7 +24,7 @@ function Increment-MessagingModuleVersion {
     # $psd1Path = Join-Path -Path $scriptRoot -ChildPath 'MessagingModule\MessagingModule.psd1'
     # $content = Get-Content $psd1Path
 
-    $psd1Path = 'MessagingModule\MessagingModule.psd1'
+    $psd1Path = '..\Modules\MessagingModule\MessagingModule\MessagingModule.psd1'
     $content = Get-Content $psd1Path
     
     $versionLineIndex = $content | Select-String -Pattern '^\s*ModuleVersion\s*=' | Select-Object -First 1 | ForEach-Object { $_.LineNumber - 1 }

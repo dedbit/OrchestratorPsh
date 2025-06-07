@@ -3,23 +3,29 @@
 # Certificate based authentication to Artifacts feed
 # Move ensuring repository to a function
 
+# Define paths at top of script
+$scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
+$functionsPath = Join-Path $scriptRoot 'functions.ps1'
+$configModulePath = Join-Path $scriptRoot '..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1'
+$orchestratorAzureModulePath = Join-Path $scriptRoot '..\Modules\OrchestratorAzure\OrchestratorAzure.psd1'
+$orchestratorCommonModulePath = Join-Path $scriptRoot '..\Modules\OrchestratorCommon'
+
 # Import the Az module to interact with Azure services
 # Import-Module Az
 
-. .\functions.ps1
+. $functionsPath
 
-Import-Module ..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1
-Import-Module ..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
+Import-Module $configModulePath
+Import-Module $orchestratorAzureModulePath
 Initialize-12Configuration
 Connect-12Azure
 
 # Import OrchestratorCommon module
-$moduleRoot = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Modules\OrchestratorCommon"
-if (Test-Path $moduleRoot) {
-    Import-Module $moduleRoot -Force
+if (Test-Path $orchestratorCommonModulePath) {
+    Import-Module $orchestratorCommonModulePath -Force
     Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
 } else {
-    Write-Error "OrchestratorCommon module not found at $moduleRoot. Make sure the module is installed correctly."
+    Write-Error "OrchestratorCommon module not found at $orchestratorCommonModulePath. Make sure the module is installed correctly."
     exit 1
 }
 

@@ -5,14 +5,16 @@
 # - Az PowerShell module installed (Install-Module -Name Az)
 # - Azure CLI installed (for alternative commands)
 
+# Define paths at top of script
+$configPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\environments\dev.json'
+$moduleRoot = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Modules\OrchestratorCommon'
+
 # Moved variable declarations to the top of the script for better organization
 
 # Parameters - customize these values
-$configPath = "..\..\environments\dev.json" # Adjust the path as needed
 $config = Get-Content -Path $configPath | ConvertFrom-Json
 
 # Import OrchestratorCommon module for Azure operations
-$moduleRoot = "..\Modules\OrchestratorCommon"
 Import-Module $moduleRoot -Force
 
 

@@ -1,24 +1,13 @@
-# Test-Module.ps1
+# test-module.ps1
 # Script to test the OrchestratorCommon wrapper module functionality
 
-# Handle cases where $PSScriptRoot might be empty (when code is pasted into terminal)
-$scriptRoot = if ($PSScriptRoot) { 
-    $PSScriptRoot 
-} else { 
-    # Try to determine the location based on the current path
-    $currentPath = Get-Location
-    if ((Split-Path -Leaf $currentPath) -eq "OrchestratorCommon") {
-        $currentPath.Path
-    } elseif (Test-Path (Join-Path -Path $currentPath -ChildPath "Modules\OrchestratorCommon")) {
-        Join-Path -Path $currentPath -ChildPath "Modules\OrchestratorCommon"
-    } else {
-        Write-Warning "Could not determine script location. Using current directory."
-        $currentPath.Path
-    }
-}
+# Define paths at top of script
+$scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
+$azureModulePath = Join-Path $scriptRoot '..\OrchestratorAzure\OrchestratorAzure.psd1'
+$modulePath = Join-Path $scriptRoot 'OrchestratorCommon.psd1'
+$envConfigPath = Join-Path $scriptRoot '..\..\environments\dev.json'
 
 # Verify OrchestratorAzure module exists
-$azureModulePath = Join-Path -Path $scriptRoot -ChildPath "..\OrchestratorAzure\OrchestratorAzure.psd1"
 if (-not (Test-Path $azureModulePath)) {
     Write-Error "OrchestratorAzure module not found at $azureModulePath. This is required by OrchestratorCommon."
     exit 1
@@ -27,7 +16,6 @@ if (-not (Test-Path $azureModulePath)) {
 }
 
 # Import the OrchestratorCommon module (which should load OrchestratorAzure)
-$modulePath = Join-Path -Path $scriptRoot -ChildPath "OrchestratorCommon.psd1"
 Import-Module -Name $modulePath -Force
 Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
 
@@ -46,7 +34,6 @@ if ($azureModuleFunctions) {
 }
 
 # Test the functions if environment config is available
-$envConfigPath = Join-Path -Path $scriptRoot -ChildPath "..\..\environments\dev.json"
 if (Test-Path $envConfigPath) {
     # Load environment config
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json

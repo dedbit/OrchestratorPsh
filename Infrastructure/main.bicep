@@ -8,6 +8,7 @@ param githubRepoUrl string = ''
 param resourceGroupName string
 param keyVaultName string
 param storageAccountName string
+param cosmosDbAccountName string
 param tenantId string
 param subscriptionId string
 
@@ -58,12 +59,24 @@ module storageModule 'storageAccount.bicep' = {
   }
 }
 
+// Deploy Cosmos DB resources using a module
+module cosmosDbModule 'cosmosDb.bicep' = {
+  name: 'cosmosDbDeployment'
+  scope: rg
+  params: {
+    location: location
+    githubRepoUrl: githubRepoUrl
+    cosmosDbAccountName: cosmosDbAccountName
+  }
+}
+
 // Output values
 output deploymentOutputs object = {
   resourceGroupName: resourceGroupName
   subscriptionId: subscriptionId
   keyVaultName: keyVaultModule.outputs.keyVaultName
   storageAccountName: storageModule.outputs.storageAccountName
+  cosmosDbAccountName: cosmosDbModule.outputs.cosmosDbAccountName
   appId: appObjectId                // Reference the parameter to avoid unused parameter warning
 }
 

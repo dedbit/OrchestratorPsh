@@ -4,27 +4,32 @@
 # Certificate based authentication to Artifacts feed
 # Move ensuring repository to a function
 
+# Define paths at top of script
+$functionsPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'functions.ps1'
+$configModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1'
+$orchestratorAzureModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Modules\OrchestratorAzure\OrchestratorAzure.psd1'
+$envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\environments\dev.json'
+$orchestratorCommonModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Modules\OrchestratorCommon'
+
 # Import the Az module to interact with Azure services
 # Import-Module Az
 
-. "$PSScriptRoot\functions.ps1"
+. $functionsPath
 
 # Import the Configuration module from the correct subfolder
-Import-Module "$PSScriptRoot\..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1" -Force
-Import-Module "$PSScriptRoot\..\Modules\OrchestratorAzure\OrchestratorAzure.psd1" -Force
+Import-Module $configModulePath -Force
+Import-Module $orchestratorAzureModulePath -Force
 
 # Initialize-12Configuration should be called with the path to dev.json
-$envConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\environments\dev.json"
 Initialize-12Configuration $envConfigPath
 Connect-12Azure
 
 # Import OrchestratorCommon module
-$moduleRoot = Join-Path -Path $PSScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
-if (Test-Path $moduleRoot) {
-    Import-Module $moduleRoot -Force
+if (Test-Path $orchestratorCommonModulePath) {
+    Import-Module $orchestratorCommonModulePath -Force
     Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
 } else {
-    Write-Error "OrchestratorCommon module not found at $moduleRoot. Make sure the module is installed correctly."
+    Write-Error "OrchestratorCommon module not found at $orchestratorCommonModulePath. Make sure the module is installed correctly."
     exit 1
 }
 

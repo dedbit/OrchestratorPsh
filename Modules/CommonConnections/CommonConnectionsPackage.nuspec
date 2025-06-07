@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>CommonConnectionsPackage</id>
+    <version>1.0.7</version>
+    <authors>OrchestratorPsh Team</authors>
+    <owners>12C</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Module for managing connection details in OrchestratorPsh</description>
+    <releaseNotes>Initial release of the CommonConnections module.</releaseNotes>
+    <tags>Connections OrchestratorPsh</tags>
+    <copyright>(c) 2025 OrchestratorPsh. All rights reserved.</copyright>
+  </metadata>
+  <files>
+    <file src="CommonConnectionsPackage\**" target="" />
+    <file src="readme.md" target="" />
+  </files>
+</package>
+
+
+
+
+
+

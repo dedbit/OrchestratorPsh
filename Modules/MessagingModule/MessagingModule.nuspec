@@ -1,0 +1,63 @@
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>MessagingModule</id> <!-- IMPORTANT: Must match PSD1 and module name -->
+    <version>1.0.83</version>
+    <authors>OrchestratorPsh Team</authors>
+    <owners>12C</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Messaging Package for OrchestratorPsh</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>Copyright © 2025 12C</copyright>
+    <tags>Messaging Package OrchestratorPsh</tags>
+  </metadata>
+  <files>
+    <file src="MessagingModule\**" target="" />
+  </files>
+</package>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,13 +1,14 @@
-# Define certificate parameters
+# Define paths at top of script
+$configPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\environments\dev.json'
 
-$configPath = "..\..\environments\dev.json" # Adjust the path as needed
+# Define certificate parameters
 $config = Get-Content -Path $configPath | ConvertFrom-Json
 
 
 # Request password input from the user
 $certPassword = Read-Host -Prompt "Enter certificate password" 
 
-$certPath = ".\$($config.certName).pfx"
+$certPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) "$($config.certName).pfx"
 $certThumbprint = $null
 
 # Create self-signed certificate valid for 2 years

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Packaging</id>
+    <version>1.0.15</version>
+    <title>Packaging PowerShell Module</title>
+    <authors>GitHub Copilot</authors>
+    <description>PowerShell module for common packaging and publishing tasks, including NuGet operations. Self-contained with its own nuget.exe binary.</description>
+    <projectUrl>https://github.com/dedbit-12c-dk/OrchestratorPsh2</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>(c) GitHub Copilot. All rights reserved.</copyright>
+    <tags>PowerShell NuGet Packaging Publish</tags>
+    <dependencies>
+      <group targetFramework="net40" />
+    </dependencies>
+  </metadata>
+  <files>
+    <!-- PowerShell module files -->
+    <file src="Packaging.psm1" target="tools\Packaging.psm1" />
+    <file src="Packaging.psd1" target="tools\Packaging.psd1" />
+    
+    <!-- Include the self-contained nuget.exe -->
+    <file src="nuget.exe" target="tools\nuget.exe" />
+    
+    <!-- Include documentation -->
+    <file src="README.md" target="tools\README.md" />
+  </files>
+</package>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

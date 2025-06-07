@@ -33,6 +33,9 @@
     "storageAccountName": {
       "value": "orchestratorpshstorage"
     },
+    "cosmosDbAccountName": {
+      "value": "orchestratorpsh-dev-cosmos"
+    },
     "appObjectId": {
       "value": "aaf08dd4-f930-4ceb-8917-fabc274574fd"
     }

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>CosmosDBPackage</id>
+    <version>1.0.7</version>
+    <authors>OrchestratorPsh Team</authors>
+    <owners>12C</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Module for CosmosDB operations in OrchestratorPsh</description>
+    <releaseNotes>Initial release of the CosmosDB module.</releaseNotes>
+    <tags>CosmosDB OrchestratorPsh Azure Database</tags>
+    <copyright>(c) 2025 OrchestratorPsh. All rights reserved.</copyright>
+  </metadata>
+  <files>
+    <file src="CosmosDBPackage\**" target="" />
+    <file src="readme.md" target="" />
+  </files>
+</package>
+
+
+
+
+
+

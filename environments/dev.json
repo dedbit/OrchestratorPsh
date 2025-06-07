@@ -4,6 +4,7 @@
     "keyVaultName": "orchestratorpsh-dev-kv",
     "resourceGroupName": "orchestratorpsh-dev-rg",
     "storageAccountName": "orchestratorpshstorage",
+    "cosmosDbAccountName": "orchestratorpsh-dev-cosmos",
     "location": "West Europe",
     "appName": "OrchestratorPsh",
     "appId": "e7bb5312-8ca0-423b-8889-4b53b3f86355",
@@ -12,5 +13,14 @@
     "certThumbprint": "31495428b50363f2392b65d554a38a7dcfe77141",
     "expiryYears": 1,
     "artifactsFeedUrl": "https://pkgs.dev.azure.com/12c/Testprojects/_packaging/OrchestratorPsh/nuget/v3/index.json",
-    "artifactsFeedUrlV2": "https://pkgs.dev.azure.com/12c/Testprojects/_packaging/OrchestratorPsh/nuget/v2"
+    "artifactsFeedUrlV2": "https://pkgs.dev.azure.com/12c/Testprojects/_packaging/OrchestratorPsh/nuget/v2",
+    "Connections": {
+        "Default": {
+            "Name": "Default",
+            "Type": "SqlServer",
+            "Host": "localhost",
+            "UserName": "sa",
+            "Password": "YourStrong!Passw0rd"
+        }
+    }
 }

@@ -166,5 +166,51 @@ function Get-ServicePrincipalObjectId {
     }
 }
 
+# Function to set a secret in Key Vault
+function Set-12cKeyVaultSecret {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$SecretName,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$SecretValue,
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$ForceNewLogin
+    )
+    
+    try {
+        # Ensure we have a connection to Azure
+        $connected = Connect-12Azure -ForceNewLogin:$ForceNewLogin
+        if (-not $connected) {
+            throw "Failed to connect to Azure"
+        }
+        
+        # Get Key Vault name from configuration
+        if (-not $global:12cConfig) {
+            throw "Global configuration variable '12cConfig' is not set. Please initialize it first."
+        }
+        
+        $keyVaultName = $global:12cConfig.keyVaultName
+        if ([string]::IsNullOrEmpty($keyVaultName)) {
+            throw "Key Vault name not found in configuration"
+        }
+        
+        # Convert the secret value to SecureString
+        $secureSecretValue = ConvertTo-SecureString $SecretValue -AsPlainText -Force
+        
+        # Set the secret (this will create or update as needed)
+        Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $SecretName -SecretValue $secureSecretValue -ErrorAction Stop
+        
+        Write-Host "Secret '$SecretName' has been set in Key Vault '$keyVaultName'." -ForegroundColor Green
+        return $true
+    }
+    catch {
+        Write-Error "Error setting secret '$SecretName' in Key Vault: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 # Export the functions
-Export-ModuleMember -Function Get-PATFromKeyVault, Connect-12Azure, Get-ServicePrincipalObjectId, Connect-12AzureWithCertificate
+Export-ModuleMember -Function Get-PATFromKeyVault, Connect-12Azure, Get-ServicePrincipalObjectId, Connect-12AzureWithCertificate, Set-12cKeyVaultSecret

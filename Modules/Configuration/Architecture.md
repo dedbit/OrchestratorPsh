@@ -33,10 +33,10 @@ $currentPath = Get-PSCommandPath
 
 - **ConfigurationPackage.psd1**: Module manifest file containing metadata and exported functions
 - **ConfigurationPackage.psm1**: Module implementation containing the actual function code
-- **BuildPackage.ps1**: Script for building the NuGet package
-- **PublishPackage.ps1**: Script for publishing the NuGet package to a feed
-- **Test-Module.ps1**: Basic test script for the module
-- **Test-ModuleComprehensive.ps1**: Detailed test script that validates all module functionality
+- **build.ps1**: Script for building the NuGet package
+- **publish.ps1**: Script for publishing the NuGet package to a feed
+- **test-module.ps1**: Basic test script for the module
+- **test-module-comprehensive.ps1**: Detailed test script that validates all module functionality
 
 ## Dependencies
 

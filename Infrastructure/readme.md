@@ -103,6 +103,8 @@ The deployment script supports several methods for parameter values:
    - Subscription ID
    - Key Vault Name
    - Resource Group Name
+   - Storage Account Name
+   - Cosmos DB Account Name
 
    ```powershell
    # Synchronize parameters between environments/dev.json and main.parameters.json
@@ -127,7 +129,7 @@ The deployment script supports several methods for parameter values:
 ## Notes
 
 ### Configuration and Parameters
-- **Environment Configuration**: Tenant ID, Subscription ID, Key Vault Name, and Resource Group Name are loaded from `environments/dev.json` file
+- **Environment Configuration**: Tenant ID, Subscription ID, Key Vault Name, Resource Group Name, Storage Account Name, and Cosmos DB Account Name are loaded from `environments/dev.json` file
 - **Parameters File**: The deployment script updates `main.parameters.json` automatically with values from environment config
 - **GitHub Repo URL**: Automatically detected from git configuration if not provided explicitly
 - **Object ID**: Obtained from the currently signed-in user for Key Vault access policies
@@ -135,6 +137,9 @@ The deployment script supports several methods for parameter values:
 ### Resource Features
 - **Key Vault**: Created with network rules (IP-based access restrictions) and access policies 
 - **PAT Secret**: The template includes a secret named "PAT" in the Key Vault
+- **Cosmos DB**: Serverless Cosmos DB account (cheapest tier) for data storage with "OrchestratorDb" database and "Items" container
+- **Cosmos DB Connection String**: Automatically stored as "CosmosDbConnectionString" secret in Key Vault
+- **Storage Account**: Standard LRS storage account for blob storage needs
 - **Access Policies**: Set automatically for the current user based on the Object ID
 
 ### Synchronization

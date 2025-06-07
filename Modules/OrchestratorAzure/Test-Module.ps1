@@ -1,9 +1,14 @@
-# Test-Module.ps1
+# test-module.ps1
 # Script to test the OrchestratorAzure module functionality
 
-Import-Module ..\..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1
-Import-Module ..\..\Modules\OrchestratorAzure\OrchestratorAzure.psd1
-Initialize-12Configuration ..\..\environments\dev.json
+# Define paths at top of script
+$configModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1'
+$orchestratorAzureModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\Modules\OrchestratorAzure\OrchestratorAzure.psd1'
+$envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\environments\dev.json'
+
+Import-Module $configModulePath
+Import-Module $orchestratorAzureModulePath
+Initialize-12Configuration $envConfigPath
 Connect-12Azure
 
 # Handle cases where $PSScriptRoot might be empty (when code is pasted into terminal)
@@ -33,7 +38,6 @@ Write-Host "Available functions in OrchestratorAzure module:" -ForegroundColor C
 $moduleFunctions | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Yellow }
 
 # Test the functions if environment config is available
-$envConfigPath = Join-Path -Path $scriptRoot -ChildPath "..\..\environments\dev.json"
 if (Test-Path $envConfigPath) {
     # Load environment config
     $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json

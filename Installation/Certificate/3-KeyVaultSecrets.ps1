@@ -1,7 +1,9 @@
 # New session. Sign in as app
 
+# Define paths at top of script
+$configPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\..\environments\dev.json'
+
 # Load environment configuration from environments/dev.json
-$configPath = "..\..\environments\dev.json" # Adjust the path as needed
 $config = Get-Content -Path $configPath | ConvertFrom-Json
 
 # The $config object now contains all properties from the JSON file and can be accessed directly.

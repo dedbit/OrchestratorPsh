@@ -6,7 +6,7 @@
     RootModule = 'ConfigurationPackage.psm1'
 
     # Version number of this module
-    ModuleVersion = '1.0.15'
+    ModuleVersion = '1.0.64'
 
     # ID used to uniquely identify this module
     GUID = '12345678-1234-1234-1234-123456789abc'
@@ -55,6 +55,19 @@
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
