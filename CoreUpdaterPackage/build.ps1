@@ -1,45 +1,37 @@
-# Define paths at top of script
-$scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
-$packagePath = Join-Path $scriptRoot 'CoreUpdaterPackage.nuspec'
-$outputDirectory = Join-Path $scriptRoot '..\Output'
-$nugetPath = Join-Path $scriptRoot '..\Tools\nuget.exe'
+# build.ps1
+# Build script for the CoreUpdaterPackage using the common Packaging module
 
-# Ensure the output directory exists
-if (-Not (Test-Path -Path $outputDirectory)) {
-    New-Item -ItemType Directory -Path $outputDirectory | Out-Null
-}
+$PackageBaseName = "CoreUpdaterPackage"
 
-# Automatically increment the version number in the .nuspec file
-$nuspecContent = Get-Content $packagePath -Raw
-if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
-    $major = [int]$matches[1]
-    $minor = [int]$matches[2]
-    $patch = [int]$matches[3] + 1
-    $newVersion = "<version>$major.$minor.$patch</version>"
-    $nuspecContent = $nuspecContent -replace '<version>[0-9]+\.[0-9]+\.[0-9]+</version>', $newVersion
-    Set-Content $packagePath $nuspecContent
-    Write-Host "Version updated to $major.$minor.$patch"
-} else {
-    Write-Host "Failed to find version in nuspec file." -ForegroundColor Red
+# --- Path Definitions ---
+$scriptRootPath = ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path)
+$NuspecFilePath = Join-Path -Path $scriptRootPath -ChildPath "CoreUpdaterPackage.nuspec"
+$OutputDirectory = Join-Path -Path $scriptRootPath -ChildPath "..\Output"
+$NuGetExePath = Join-Path -Path $scriptRootPath -ChildPath "..\Tools\nuget.exe"
+
+# --- Module Import ---
+try {
+    Import-Module "..\Modules\Packaging\Packaging.psd1" -Force
+    Write-Host "Packaging module imported successfully." -ForegroundColor Green
+} catch {
+    Write-Error "Failed to import Packaging module: $($_.Exception.Message)"
     exit 1
 }
 
-# Build the NuGet package
-Write-Host "Building NuGet package..."
-& $nugetPath pack $packagePath -OutputDirectory $outputDirectory
+# --- Main Script Execution ---
+try {
+    Confirm-DirectoryExists -Path $OutputDirectory
 
-# Delete the old version if the new version is built successfully
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "NuGet package built successfully."
+    $newVersion = Set-PackageVersionIncrement -NuspecPath $NuspecFilePath
+    if (-not $newVersion) { throw "Failed to increment package version." }
+    Write-Host "Successfully incremented package version to $newVersion" -ForegroundColor Cyan
 
-    # Get the list of old package files
-    $oldPackages = Get-ChildItem -Path $outputDirectory -Filter "CoreUpdaterPackage.*.nupkg" | Where-Object { $_.Name -ne "CoreUpdaterPackage.$major.$minor.$patch.nupkg" }
+    Invoke-NuGetPack -NuspecPath $NuspecFilePath -OutputDirectory $OutputDirectory -NuGetExePath $NuGetExePath
 
-    foreach ($oldPackage in $oldPackages) {
-        Write-Host "Deleting old package: $($oldPackage.Name)"
-        Remove-Item -Path $oldPackage.FullName -Force
-    }
-} else {
-    Write-Host "Failed to build NuGet package." -ForegroundColor Red
-    exit $LASTEXITCODE
+    Remove-OldPackageVersions -OutputDirectory $OutputDirectory -PackageBaseName $PackageBaseName -VersionToKeep $newVersion
+
+    Write-Host "Build process completed successfully for version $newVersion!" -ForegroundColor Green
+} catch {
+    Write-Error "An error occurred during the build process: $($_.Exception.Message)"
+    exit 1
 }

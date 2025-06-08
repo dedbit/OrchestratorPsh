@@ -1,66 +1,38 @@
 # build.ps1
-# Script to build the messaging package
+# Script to build the MessagingModule package using the common Packaging module
 
-# Todo: When setting new version for package, It should also update the nuspec file src target. 
+$PackageBaseName = "MessagingModule"
 
-# Define paths at top of script
-$scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
-$packagePath = Join-Path $scriptRoot 'MessagingModule.nuspec'
-$outputDirectory = Join-Path $scriptRoot '..\..\Output'
-$nugetPath = Join-Path $scriptRoot '..\..\Tools\nuget.exe'
-$modulePath = Join-Path $scriptRoot 'MessagingModule\MessagingModule.psd1'
+# --- Path Definitions ---
+$scriptRootPath = ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path)
+$NuspecFilePath = Join-Path -Path $scriptRootPath -ChildPath "MessagingModule.nuspec"
+$ModuleManifestPath = Join-Path -Path $scriptRootPath -ChildPath "MessagingModule\MessagingModule.psd1"
+$OutputDirectory = Join-Path -Path $scriptRootPath -ChildPath "..\..\Output"
+$NuGetExePath = Join-Path -Path $scriptRootPath -ChildPath "..\..\Tools\nuget.exe"
 
-# Ensure the output directory exists
-if (-Not (Test-Path -Path $outputDirectory)) {
-    New-Item -ItemType Directory -Path $outputDirectory | Out-Null
-    Write-Host "Created output directory: $outputDirectory" -ForegroundColor Green
-}
-
-# Automatically increment the version number in the .nuspec file
-$nuspecContent = Get-Content $packagePath -Raw
-if ($nuspecContent -match '<version>([0-9]+)\.([0-9]+)\.([0-9]+)</version>') {
-    $major = [int]$matches[1]
-    $minor = [int]$matches[2]
-    $patch = [int]$matches[3] + 1
-    $newVersion = "$major.$minor.$patch"
-    
-    # Update nuspec file
-    $nuspecContent = $nuspecContent -replace '<version>[0-9]+\.[0-9]+\.[0-9]+</version>', "<version>$newVersion</version>"
-    Set-Content $packagePath $nuspecContent
-    Write-Host "Nuspec version updated to $newVersion" -ForegroundColor Cyan
-    
-    # Update module manifest
-    if (Test-Path $modulePath) {
-        $moduleContent = Get-Content $modulePath -Raw
-        $moduleContent = $moduleContent -replace "ModuleVersion = '[0-9]+\.[0-9]+\.[0-9]+'", "ModuleVersion = '$newVersion'"
-        Set-Content $modulePath $moduleContent
-        Write-Host "Module manifest version updated to $newVersion" -ForegroundColor Cyan
-    } else {
-        Write-Host "Module manifest file not found at $modulePath" -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "Failed to find version in nuspec file." -ForegroundColor Red
+# --- Module Import ---
+try {
+    Import-Module "..\Packaging\Packaging.psd1" -Force
+    Write-Host "Packaging module imported successfully." -ForegroundColor Green
+} catch {
+    Write-Error "Failed to import Packaging module: $($_.Exception.Message)"
     exit 1
 }
 
-# Build the NuGet package
-Write-Host "Building NuGet package..." -ForegroundColor Cyan
-& $nugetPath pack $packagePath -OutputDirectory $outputDirectory
+# --- Main Script Execution ---
+try {
+    Confirm-DirectoryExists -Path $OutputDirectory
 
-# Delete the old version if the new version is built successfully
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "NuGet package built successfully." -ForegroundColor Green
+    $newVersion = Set-PackageVersionIncrement -NuspecPath $NuspecFilePath -ModuleManifestPath $ModuleManifestPath
+    if (-not $newVersion) { throw "Failed to increment package version." }
+    Write-Host "Successfully incremented package version to $newVersion" -ForegroundColor Cyan
 
-    # Get the list of old package files
-    $oldPackages = Get-ChildItem -Path $outputDirectory -Filter "MessagingModule.*.nupkg" | Where-Object { $_.Name -ne "MessagingModule.$major.$minor.$patch.nupkg" }
+    Invoke-NuGetPack -NuspecPath $NuspecFilePath -OutputDirectory $OutputDirectory -NuGetExePath $NuGetExePath
 
-    foreach ($oldPackage in $oldPackages) {
-        Write-Host "Deleting old package: $($oldPackage.Name)" -ForegroundColor Yellow
-        Remove-Item -Path $oldPackage.FullName -Force
-    }
-    
-    Write-Host "Build process completed!" -ForegroundColor Green
-} else {
-    Write-Host "Failed to build NuGet package." -ForegroundColor Red
-    exit $LASTEXITCODE
+    Remove-OldPackageVersions -OutputDirectory $OutputDirectory -PackageBaseName $PackageBaseName -VersionToKeep $newVersion
+
+    Write-Host "Build process completed successfully for version $newVersion!" -ForegroundColor Green
+} catch {
+    Write-Error "An error occurred during the build process: $($_.Exception.Message)"
+    exit 1
 }
