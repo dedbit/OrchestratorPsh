@@ -63,7 +63,7 @@ graph TD
 
 - **Get-12cCosmosConnection**: Retrieves CosmosDB connection details from Azure Key Vault and returns connection configuration with database and container names.
 - **Get-12cItem**: Fetches a specific item from CosmosDB by ID with optional partition key parameter and automatic authentication header generation.
-- **Set-12cItem**: Upserts an item into CosmosDB with automatic JSON conversion and ensures required id property validation.
+- **Set-12cItem**: Upserts an item into CosmosDB with automatic JSON conversion and ensures required id and partitionKey property validation.
 - **Remove-12cItem**: Deletes a specific item from CosmosDB by ID with optional partition key parameter and automatic authentication header generation.
 
 ## Connections & Accesses
@@ -74,7 +74,7 @@ graph TD
 
 ## Data Stores & Configurations
 
-- **Azure CosmosDB**: Primary document database with configurable database and container names defaulting to "12cOrchestrator" and "Items".
+- **Azure CosmosDB**: Primary document database with configurable database and container names defaulting to "12cOrchestrator" and "Items", using partitionKey field as the partition key.
 - **Azure Key Vault Secrets**: Secure storage for CosmosDB connection string with automatic retrieval during operations.
 - **environments/dev.json**: Configuration file containing CosmosDB account name and Key Vault details for environment-specific settings.
 

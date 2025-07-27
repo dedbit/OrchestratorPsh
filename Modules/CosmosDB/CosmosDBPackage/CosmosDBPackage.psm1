@@ -122,6 +122,11 @@ function Set-12cItem {
             throw "Item must have an 'id' property"
         }
 
+        # Ensure the item has a partitionKey property, default to id if missing
+        if (-not $Item.partitionKey) {
+            $Item | Add-Member -MemberType NoteProperty -Name 'partitionKey' -Value $Item.id -Force
+        }
+
         $accountEndpoint = ($connection.ConnectionString -split 'AccountEndpoint=')[1] -split ';' | Select-Object -First 1
         $accountKey = ($connection.ConnectionString -split 'AccountKey=')[1] -split ';' | Select-Object -First 1
 
@@ -142,7 +147,7 @@ function Set-12cItem {
             "x-ms-date"       = $date
             "x-ms-version"    = "2018-12-31"
             "x-ms-documentdb-is-upsert" = "true"
-            "x-ms-documentdb-partitionkey" = '["' + $Item.id + '"]'
+            "x-ms-documentdb-partitionkey" = '["' + $Item.partitionKey + '"]'
             "Content-Type"    = "application/json"
         }
 
@@ -210,5 +215,83 @@ function Remove-12cItem {
     }
 }
 
+# Function to execute SQL queries against CosmosDB
+function Invoke-12cCosmosDbSqlQuery {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$SqlQuery,
+        [Parameter(Mandatory = $false)]
+        [string]$DatabaseName = "12cOrchestrator",
+        [Parameter(Mandatory = $false)]
+        [string]$ContainerName = "Items",
+        [Parameter(Mandatory = $false)]
+        [hashtable]$Parameters = @{}
+    )
+
+    try {
+        # Get connection details
+        $connection = Get-12cCosmosConnection -DatabaseName $DatabaseName -ContainerName $ContainerName
+
+        $accountEndpoint = ($connection.ConnectionString -split 'AccountEndpoint=')[1] -split ';' | Select-Object -First 1
+        $accountKey = ($connection.ConnectionString -split 'AccountKey=')[1] -split ';' | Select-Object -First 1
+
+        $resourcePath = "dbs/$DatabaseName/colls/$ContainerName"
+        $date = [DateTime]::UtcNow.ToString("r")
+        $verb = "POST"
+        $stringToSign = "$($verb.ToLower())`ndocs`n$resourcePath`n$($date.ToLower())`n`n"
+
+        $hmacSha = New-Object System.Security.Cryptography.HMACSHA256
+        $hmacSha.Key = [Convert]::FromBase64String($accountKey)
+        $hash = $hmacSha.ComputeHash([Text.Encoding]::UTF8.GetBytes($stringToSign))
+        $sig = [Convert]::ToBase64String($hash)
+        $auth = "type=master&ver=1.0&sig=$sig"
+
+        $headers = @{
+            Authorization     = [System.Web.HttpUtility]::UrlEncode($auth)
+            "x-ms-date"       = $date
+            "x-ms-version"    = "2018-12-31"
+            "Content-Type"    = "application/query+json"
+            "x-ms-documentdb-isquery" = "true"
+            "x-ms-documentdb-query-enablecrosspartition" = "true"
+        }
+
+        # Build query body
+        $queryBody = @{
+            query = $SqlQuery
+        }
+
+        # Add parameters if provided
+        if ($Parameters.Count -gt 0) {
+            $queryParameters = @()
+            foreach ($key in $Parameters.Keys) {
+                $queryParameters += @{
+                    name = "@$key"
+                    value = $Parameters[$key]
+                }
+            }
+            $queryBody.parameters = $queryParameters
+        }
+
+        $uri = "$($accountEndpoint.TrimEnd('/'))/$resourcePath/docs"
+        $body = $queryBody | ConvertTo-Json -Depth 10
+        
+        $response = Invoke-RestMethod -Uri $uri -Headers $headers -Method POST -Body $body
+        
+        # Always return a collection, even if empty
+        if ($response.Documents) {
+            return $response.Documents
+        } else {
+            # Return an empty array as a single-item array to prevent unwrapping
+            # This is a PowerShell-specific workaround for empty array unwrapping behavior
+            return ,(New-Object 'object[]' 0)
+        }
+    }
+    catch {
+        Write-Error "Failed to execute SQL query against CosmosDB: $($_.Exception.Message)"
+        throw
+    }
+}
+
 # Export the functions
-Export-ModuleMember -Function Get-12cItem, Set-12cItem, Remove-12cItem, Get-12cCosmosConnection
+Export-ModuleMember -Function Get-12cItem, Set-12cItem, Remove-12cItem, Get-12cCosmosConnection, Invoke-12cCosmosDbSqlQuery

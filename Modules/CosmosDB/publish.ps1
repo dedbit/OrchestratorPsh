@@ -1,9 +1,5 @@
 # publish.ps1
-# Script to publish the CosmosDB module using the common Packaging module
-
-$ArtifactsFeedName = "OrchestratorPshRepo"
-$SecretName = "PAT"
-$PackageName = "CosmosDBPackage"
+# Script to publish the CosmosDB module NuGet package using the common Packaging module
 
 # --- Path Definitions ---
 $basePath = ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path)
@@ -14,6 +10,9 @@ $commonModuleRootPath = Join-Path $basePath "..\OrchestratorCommon"
 $packagingModulePath = Join-Path $basePath "..\Packaging\Packaging.psd1"
 $nuspecFilePath = Join-Path $basePath "CosmosDBPackage.nuspec"
 $outputDirectory = Join-Path $basePath "..\..\Output"
+$ArtifactsFeedName = "OrchestratorPshRepo"
+$SecretName = "PAT"
+$PackageName = "CosmosDBPackage"
 
 # --- Module Imports & Initialization ---
 try {
@@ -21,7 +20,7 @@ try {
     Import-Module $azureModulePsd1
     Import-Module $packagingModulePath
     Initialize-12Configuration $envConfigPath
-    Connect-12Azure
+    Connect-12AzureWithCertificate
 
     if (Test-Path $commonModuleRootPath) {
         Import-Module $commonModuleRootPath -Force
@@ -38,7 +37,7 @@ try {
     Write-Host "Full package path: $nupkgFilePath" -ForegroundColor Cyan
     if (-not (Test-Path $nupkgFilePath)) { throw "Package file not found: $nupkgFilePath" }
 
-    $pat = Get-NuGetPATFromKeyVault -SecretName $SecretName
+    $pat = Get-12cKeyVaultSecret -SecretName $SecretName
     $artifactsFeedUrl = $Global:12cConfig.artifactsFeedUrl
     if ([string]::IsNullOrEmpty($artifactsFeedUrl)) { throw "Missing ArtifactsFeedUrl from global scope." }
     Ensure-NuGetFeedConfigured -FeedName $ArtifactsFeedName -FeedUrl $artifactsFeedUrl -PAT $pat

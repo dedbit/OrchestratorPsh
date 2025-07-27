@@ -7,12 +7,10 @@ $buildPublishDirectories = @(
     "CoreUpdaterPackage",
     "Modules/CommonConnections",
     "Modules/Configuration",
+    "Modules/CosmosDB",
     "Modules/MessagingModule", 
-    "Modules/OrchestratorAzure",
-    "Modules/OrchestratorCommon",
+    "Modules/OrchestratorRouting",
     "Modules/Packaging"
-
-    
 )
 
 foreach ($directory in $buildPublishDirectories) {
@@ -45,3 +43,17 @@ foreach ($directory in $buildPublishDirectories) {
 }
 
 Write-Host "`nAll build and publish scripts processed." -ForegroundColor Cyan
+
+# Run Update-12cModules.ps1 after all builds and publishes
+$updateScript = Join-Path 'CoreUpdaterPackage' 'Update-12cModules.ps1'
+if (Test-Path $updateScript) {
+    Write-Host "Running Update-12cModules.ps1..." -ForegroundColor Yellow
+    try {
+        & $updateScript
+        Write-Host "Update-12cModules.ps1 completed successfully." -ForegroundColor Green
+    } catch {
+        Write-Host "Update-12cModules.ps1 failed: $($_.Exception.Message)" -ForegroundColor Red
+    }
+} else {
+    Write-Host "Update-12cModules.ps1 not found in CoreUpdaterPackage directory." -ForegroundColor Red
+}

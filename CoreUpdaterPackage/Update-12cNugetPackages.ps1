@@ -4,11 +4,18 @@
 # Move ensuring repository to a function
 
 # Define paths at top of script
-$scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
-$functionsPath = Join-Path $scriptRoot 'functions.ps1'
+$scriptRoot = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '.'
+
+# Define all paths at the top to avoid context issues
+$functionsPath = Join-Path $scriptRoot 'Functions\functions.ps1'
+$configPath = Join-Path $scriptRoot 'config.json'
 $configModulePath = Join-Path $scriptRoot '..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1'
 $orchestratorAzureModulePath = Join-Path $scriptRoot '..\Modules\OrchestratorAzure\OrchestratorAzure.psd1'
 $orchestratorCommonModulePath = Join-Path $scriptRoot '..\Modules\OrchestratorCommon'
+$envConfigPath = Join-Path $scriptRoot '..\environments\dev.json'
+$packagesJsonPath = Join-Path $scriptRoot 'packages.json'
+$localPackagesDir = Join-Path $scriptRoot '..\Packages'
+$nugetPath = Join-Path $scriptRoot '..\Tools\nuget.exe'
 
 # Import the Az module to interact with Azure services
 # Import-Module Az
@@ -17,7 +24,7 @@ $orchestratorCommonModulePath = Join-Path $scriptRoot '..\Modules\OrchestratorCo
 
 Import-Module $configModulePath
 Import-Module $orchestratorAzureModulePath
-Initialize-12Configuration
+Initialize-12Configuration $configPath
 Connect-12Azure
 
 # Import OrchestratorCommon module
@@ -26,18 +33,6 @@ if (Test-Path $orchestratorCommonModulePath) {
     Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
 } else {
     Write-Error "OrchestratorCommon module not found at $orchestratorCommonModulePath. Make sure the module is installed correctly."
-    exit 1
-}
-
-# Define file paths and variables
-$envConfigPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\environments\dev.json"
-$packagesJsonPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "packages.json"
-$localPackagesDir = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Packages"
-$nugetPath = Join-Path -Path $(Get-ScriptRoot) -ChildPath "..\Tools\nuget.exe"
-
-# Check if nuget.exe exists
-if (-not (Test-Path $nugetPath)) {
-    Write-Error "nuget.exe not found at $nugetPath. Please make sure it exists."
     exit 1
 }
 
@@ -60,20 +55,44 @@ if (Test-Path $envConfigPath) {
     exit 1
 }
 
-# Load packages list
-if (Test-Path $packagesJsonPath) {
-    $packagesList = @(Get-Content -Path $packagesJsonPath -Raw | ConvertFrom-Json)
-    Write-Host "Found $(($packagesList | Measure-Object).Count) packages in packages.json" -ForegroundColor Cyan
-} else {
-    Write-Error "Could not find packages.json at $packagesJsonPath. Aborting script."
+# Load packages list - try KeyVault first, fallback to local file
+$packagesList = $null
+
+# Try to get packages from KeyVault first
+try {
+    Write-Host "Attempting to retrieve packages list from Key Vault..." -ForegroundColor Cyan
+    $secretValueText = Get-12cKeyVaultSecret -SecretName "Packages"
+    $packagesList = @($secretValueText | ConvertFrom-Json)
+    Write-Host "✓ Successfully loaded packages from Key Vault" -ForegroundColor Green
+} catch {
+    Write-Warning "Failed to retrieve packages from Key Vault: $($_.Exception.Message)"
+    Write-Host "Falling back to local packages.json file..." -ForegroundColor Yellow
+}
+
+# Fallback to local packages.json if KeyVault failed or not configured
+if (-not $packagesList) {
+    if (Test-Path $packagesJsonPath) {
+        $packagesList = @(Get-Content -Path $packagesJsonPath -Raw | ConvertFrom-Json)
+        Write-Host "Found $(($packagesList | Measure-Object).Count) packages in local packages.json" -ForegroundColor Cyan
+    } else {
+        Write-Error "Could not find packages.json at $packagesJsonPath and failed to retrieve from Key Vault. Aborting script."
+        exit 1
+    }
+}
+
+# Validate we have packages
+if (-not $packagesList -or $packagesList.Count -eq 0) {
+    Write-Error "No packages found in either Key Vault or local packages.json. Aborting script."
     exit 1
 }
+
+Write-Host "Total packages to process: $(($packagesList | Measure-Object).Count)" -ForegroundColor Green
 
 # Retrieve the PAT securely
 try {
     Write-Host "Retrieving PAT from Key Vault..." -ForegroundColor Yellow
     $SecretName = "PAT" # Name of the secret storing the PAT
-    $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
+    $PersonalAccessToken = Get-12cKeyVaultSecret -SecretName $SecretName
     Write-Host "PAT retrieved successfully!" -ForegroundColor Green
 } catch {
     Write-Error "Failed to retrieve PAT: $($_.Exception.Message)"

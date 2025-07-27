@@ -30,34 +30,6 @@ function Get-PackageVersionFromNuspec {
     }
 }
 
-function Get-NuGetPATFromKeyVault {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]$SecretName
-    )
-    # Access configuration values from the globally initialized configuration
-    # Initialize-12Configuration stores config in $Global:12cConfig
-    $kvName = $Global:12cConfig.keyVaultName
-    $tenId = $Global:12cConfig.tenantId
-    $subId = $Global:12cConfig.subscriptionId
-
-    # Check if essential config values were found
-    if ([string]::IsNullOrEmpty($kvName) -or [string]::IsNullOrEmpty($tenId) -or [string]::IsNullOrEmpty($subId)) {
-        Write-Error "One or more required configuration values (KeyVaultName, TenantId, SubscriptionId) could not be retrieved from the global configuration (expected in \$Global:12cConfig). Ensure Initialize-12Configuration has run successfully and set them."
-        throw "Missing KeyVault configuration from global scope."
-    }
-
-    Write-Host "Retrieving PAT from Key Vault: $kvName (Secret: $SecretName)" -ForegroundColor Cyan
-    # Get-PATFromKeyVault is assumed to be available from an imported module (e.g., OrchestratorAzure)
-    $pat = Get-PATFromKeyVault -KeyVaultName $kvName -SecretName $SecretName -TenantId $tenId -SubscriptionId $subId
-
-    if ([string]::IsNullOrEmpty($pat)) {
-        Write-Error "Failed to retrieve Personal Access Token from Key Vault for secret '$SecretName'. Aborting."
-        throw "Failed to retrieve PAT from Key Vault for secret '$SecretName'."
-    }
-    return $pat
-}
 
 function Publish-NuGetPackageAndCleanup {
     [CmdletBinding()]
@@ -256,7 +228,7 @@ function Invoke-NuGetPack {
         if ((Test-Path $NuGetExePath) -and ($isWindowsPlatform -or $NuGetExePath -notlike "*nuget.exe")) {
             Write-Host "Using NuGet executable: $NuGetExePath" -ForegroundColor Gray
             & $NuGetExePath pack $NuspecPath -OutputDirectory $OutputDirectory
-        } elseif (-not $isWindowsPlatform -and -not (Test-Path $NuGetExePath)) {
+        } elseif (-not $isWindowsPlatform) {
             # For non-Windows platforms, simulate success for development purposes
             Write-Warning "NuGet pack is not fully supported on non-Windows platforms. Simulating success for development purposes."
             Write-Host "On Windows, this would execute: nuget.exe pack $NuspecPath -OutputDirectory $OutputDirectory" -ForegroundColor Yellow
@@ -318,6 +290,48 @@ function Remove-OldPackageVersions {
     }
 }
 
+function Ensure-NuGetProvider {
+    Write-Host "Checking NuGet PackageProvider..." -ForegroundColor Cyan
+    
+    # Check if NuGet provider is installed
+    $nugetProvider = Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue
+    if (-not $nugetProvider) {
+        Write-Host "NuGet PackageProvider not found. Installing..." -ForegroundColor Yellow
+        try {
+            Install-PackageProvider -Name NuGet -Force -Scope CurrentUser -MinimumVersion 2.8.5.201
+            Write-Host "NuGet PackageProvider installed successfully." -ForegroundColor Green
+        } catch {
+            Write-Error "Failed to install NuGet PackageProvider: $($_.Exception.Message)"
+            throw
+        }
+    } else {
+        Write-Host "NuGet PackageProvider is already installed (version: $($nugetProvider.Version))." -ForegroundColor Green
+        
+        # Check if it's a recent version
+        if ([version]$nugetProvider.Version -lt [version]"2.8.5.201") {
+            Write-Host "Updating NuGet PackageProvider to latest version..." -ForegroundColor Yellow
+            try {
+                Install-PackageProvider -Name NuGet -Force -Scope CurrentUser -MinimumVersion 2.8.5.201
+                Write-Host "NuGet PackageProvider updated successfully." -ForegroundColor Green
+            } catch {
+                Write-Warning "Failed to update NuGet PackageProvider: $($_.Exception.Message)"
+            }
+        }
+    }
+    
+    # Ensure PowerShell Gallery is trusted
+    $psGallery = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
+    if ($psGallery -and $psGallery.InstallationPolicy -ne 'Trusted') {
+        Write-Host "Setting PowerShell Gallery as trusted..." -ForegroundColor Yellow
+        try {
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            Write-Host "PowerShell Gallery is now trusted." -ForegroundColor Green
+        } catch {
+            Write-Warning "Failed to set PowerShell Gallery as trusted: $($_.Exception.Message)"
+        }
+    }
+}
+
 
 # Export the functions to make them available when the module is imported
-Export-ModuleMember -Function 'Get-PackageVersionFromNuspec', 'Get-NuGetPATFromKeyVault', 'Publish-NuGetPackageAndCleanup', 'Ensure-NuGetFeedConfigured', 'Confirm-DirectoryExists', 'Set-PackageVersionIncrement', 'Invoke-NuGetPack', 'Remove-OldPackageVersions'
+Export-ModuleMember -Function 'Get-PackageVersionFromNuspec', 'Publish-NuGetPackageAndCleanup', 'Ensure-NuGetFeedConfigured', 'Confirm-DirectoryExists', 'Set-PackageVersionIncrement', 'Invoke-NuGetPack', 'Remove-OldPackageVersions', 'Ensure-NuGetProvider'

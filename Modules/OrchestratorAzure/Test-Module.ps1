@@ -9,7 +9,7 @@ $envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path)
 Import-Module $configModulePath
 Import-Module $orchestratorAzureModulePath
 Initialize-12Configuration $envConfigPath
-Connect-12Azure
+Connect-12AzureWithCertificate
 
 # Handle cases where $PSScriptRoot might be empty (when code is pasted into terminal)
 $scriptRoot = if ($PSScriptRoot) { 
@@ -51,18 +51,18 @@ if (Test-Path $envConfigPath) {
     
     # Test Connect-12Azure function
     Write-Host "`nTesting Connect-12Azure function..." -ForegroundColor Cyan
-    $connected = Connect-12Azure #-TenantId $TenantId -SubscriptionId $SubscriptionId
+    $connected = Connect-12AzureWithCertificate #-TenantId $TenantId -SubscriptionId $SubscriptionId
     if ($connected) {
         Write-Host "Connection successful!" -ForegroundColor Green
     } else {
         Write-Host "Connection failed!" -ForegroundColor Red
     }
     
-    # Test Get-PATFromKeyVault function
-    Write-Host "`nTesting Get-PATFromKeyVault function..." -ForegroundColor Cyan
+    # Test Get-12cKeyVaultSecret function
+    Write-Host "`nTesting Get-12cKeyVaultSecret function..." -ForegroundColor Cyan
     try {
         $SecretName = "PAT"
-        $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
+        $PersonalAccessToken = Get-12cKeyVaultSecret -SecretName $SecretName
         
         if ($PersonalAccessToken) {
             $maskedValue = $PersonalAccessToken.Substring(0, [Math]::Min(4, $PersonalAccessToken.Length)) + "..."
@@ -73,7 +73,7 @@ if (Test-Path $envConfigPath) {
         }
     }
     catch {
-        Write-Host "Error testing Get-PATFromKeyVault: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Error testing Get-12cKeyVaultSecret: $($_.Exception.Message)" -ForegroundColor Red
     }
 } else {
     Write-Host "`nCould not find environment config at $envConfigPath. Skipping function test." -ForegroundColor Yellow

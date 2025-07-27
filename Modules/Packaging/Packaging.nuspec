@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>Packaging</id>
-    <version>1.0.15</version>
+    <version>1.0.27</version>
     <title>Packaging PowerShell Module</title>
     <authors>GitHub Copilot</authors>
     <description>PowerShell module for common packaging and publishing tasks, including NuGet operations. Self-contained with its own nuget.exe binary.</description>
@@ -15,17 +15,27 @@
     </dependencies>
   </metadata>
   <files>
-    <!-- PowerShell module files -->
-    <file src="Packaging.psm1" target="tools\Packaging.psm1" />
-    <file src="Packaging.psd1" target="tools\Packaging.psd1" />
-    
-    <!-- Include the self-contained nuget.exe -->
+    <!-- PowerShell module files at root -->
+    <file src="Packaging.psm1" target="Packaging.psm1" />
+    <file src="Packaging.psd1" target="Packaging.psd1" />
+    <!-- Keep nuget.exe in tools subfolder -->
     <file src="nuget.exe" target="tools\nuget.exe" />
-    
-    <!-- Include documentation -->
-    <file src="README.md" target="tools\README.md" />
+    <!-- Documentation at root -->
+    <file src="README.md" target="README.md" />
   </files>
 </package>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

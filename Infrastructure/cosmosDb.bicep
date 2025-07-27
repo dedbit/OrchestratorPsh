@@ -61,7 +61,7 @@ resource itemsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/cont
     resource: {
       id: 'Items'
       partitionKey: {
-        paths: ['/id']
+        paths: ['/partitionKey']
         kind: 'Hash'
       }
     }

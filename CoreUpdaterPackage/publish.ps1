@@ -18,6 +18,7 @@ try {
     if (Test-Path $commonModuleRootPath) { Import-Module $commonModuleRootPath -Force }
     Import-Module $packagingModulePath
     Initialize-12Configuration $envConfigPath
+    Connect-12AzureWithCertificate
 } catch {
     Write-Error "Failed during module import or initialization: $($_.Exception.Message)"
     exit 1
@@ -30,7 +31,7 @@ try {
     Write-Host "Full package path: $nupkgFilePath" -ForegroundColor Cyan
     if (-not (Test-Path $nupkgFilePath)) { throw "Package file not found: $nupkgFilePath" }
 
-    $pat = Get-NuGetPATFromKeyVault -SecretName $SecretName
+    $pat = Get-12cKeyVaultSecret -SecretName $SecretName
     $artifactsFeedUrl = $Global:12cConfig.artifactsFeedUrl
     if ([string]::IsNullOrEmpty($artifactsFeedUrl)) { throw "Missing ArtifactsFeedUrl from global scope." }
     Ensure-NuGetFeedConfigured -FeedName $ArtifactsFeedName -FeedUrl $artifactsFeedUrl -PAT $pat

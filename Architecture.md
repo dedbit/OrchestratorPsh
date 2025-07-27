@@ -10,7 +10,6 @@ PowerShell-Based System Architecture for Package Management
 - **Responsibilities**:
     - Monitors specified artifact feeds (e.g., Azure DevOps, NuGet) for new package versions.
     - Compares remote package versions with locally installed versions.
-    - Implements configurable intervals for version checks.
     - Logs version check results and update attempts for auditing and troubleshooting.
 
 #### 2. **Worker Components**
@@ -21,7 +20,6 @@ PowerShell-Based System Architecture for Package Management
     - Provides status reporting and error handling mechanisms.
     - Runs as background jobs to prevent blocking the system during operations.
 
-#### 4. **Integration Points**
 #### 3. **Integration Points**
 - **Artifact Feed API Integration**: Supports APIs like Azure DevOps and NuGet for fetching packages.
 - **Key Vault**: Contains credentials, such as the Personal Access Token (PAT) for Azure DevOps. 

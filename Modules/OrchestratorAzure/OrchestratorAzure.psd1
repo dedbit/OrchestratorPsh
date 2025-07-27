@@ -33,7 +33,7 @@ Description = 'Azure-related functions for OrchestratorPsh project'
 PowerShellVersion = '5.1'
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @('Get-PATFromKeyVault', 'Connect-12Azure', 'Connect-12AzureWithCertificate')
+FunctionsToExport = @('Get-12cKeyVaultSecret', 'Connect-12Azure', 'Connect-12AzureWithCertificate', 'Get-ServicePrincipalObjectId', 'Set-12cKeyVaultSecret')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
@@ -43,5 +43,8 @@ VariablesToExport = '*'
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
 AliasesToExport = @()
+
+# Required modules to import as dependencies for this module
+# RequiredModules = @('Packaging') # Removed - importing manually in the PSM1 file
 
 }

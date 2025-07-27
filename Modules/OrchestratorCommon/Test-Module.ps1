@@ -1,83 +1,91 @@
 # test-module.ps1
-# Script to test the OrchestratorCommon wrapper module functionality
+# Integration test script for the OrchestratorCommon wrapper module functionality
+# Note: This is an integration test that validates module loading and function availability
 
-# Define paths at top of script
+# Define paths at top of script using recommended pattern
 $scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
 $azureModulePath = Join-Path $scriptRoot '..\OrchestratorAzure\OrchestratorAzure.psd1'
 $modulePath = Join-Path $scriptRoot 'OrchestratorCommon.psd1'
 $envConfigPath = Join-Path $scriptRoot '..\..\environments\dev.json'
 
+Write-Host "=== OrchestratorCommon Module Integration Test ===" -ForegroundColor Cyan
+
 # Verify OrchestratorAzure module exists
 if (-not (Test-Path $azureModulePath)) {
-    Write-Error "OrchestratorAzure module not found at $azureModulePath. This is required by OrchestratorCommon."
+    Write-Host "✗ OrchestratorAzure module not found at $azureModulePath. This is required by OrchestratorCommon." -ForegroundColor Red
     exit 1
 } else {
-    Write-Host "OrchestratorAzure module found at $azureModulePath." -ForegroundColor Green
+    Write-Host "✓ OrchestratorAzure module found at $azureModulePath" -ForegroundColor Green
 }
 
 # Import the OrchestratorCommon module (which should load OrchestratorAzure)
-Import-Module -Name $modulePath -Force
-Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
+try {
+    Import-Module -Name $modulePath -Force
+    Write-Host "✓ OrchestratorCommon module imported successfully" -ForegroundColor Green
+} catch {
+    Write-Host "✗ Failed to import OrchestratorCommon module: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
+
+# Assert module import
+if (-not (Get-Module OrchestratorCommon)) {
+    throw "OrchestratorCommon module was not imported."
+}
 
 # Show available functions in the OrchestratorCommon module
-# These should match the functions from OrchestratorAzure
-$moduleFunctions = Get-Command -Module OrchestratorCommon
-Write-Host "Available functions in OrchestratorCommon module:" -ForegroundColor Cyan
-$moduleFunctions | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Yellow }
+$moduleFunctions = Get-Command -Module OrchestratorCommon -ErrorAction SilentlyContinue
+if ($moduleFunctions) {
+    Write-Host "✓ Functions available in OrchestratorCommon module:" -ForegroundColor Cyan
+    $moduleFunctions | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Yellow }
+} else {
+    Write-Host "! No functions found in OrchestratorCommon module" -ForegroundColor Yellow
+}
 
 # Verify OrchestratorAzure was loaded and check its functions
-$azureModuleFunctions = Get-Command -Module OrchestratorAzure
+$azureModuleFunctions = Get-Command -Module OrchestratorAzure -ErrorAction SilentlyContinue
 if ($azureModuleFunctions) {
-    Write-Host "OrchestratorAzure module was successfully loaded by OrchestratorCommon.`nFunctions in OrchestratorAzure module:`n$($azureModuleFunctions | ForEach-Object { "  - $($_.Name)" })" -ForegroundColor Green
+    Write-Host "✓ OrchestratorAzure module was successfully loaded by OrchestratorCommon" -ForegroundColor Green
+    Write-Host "Functions in OrchestratorAzure module:" -ForegroundColor Cyan
+    $azureModuleFunctions | ForEach-Object { Write-Host "  - $($_.Name)" -ForegroundColor Yellow }
+    # Assert at least one function exists
+    if ($azureModuleFunctions.Count -eq 0) {
+        throw "No functions found in OrchestratorAzure module."
+    }
 } else {
-    Write-Warning "OrchestratorAzure module was not loaded properly."
+    Write-Host "! OrchestratorAzure module was not loaded properly" -ForegroundColor Yellow
+    throw "OrchestratorAzure module was not loaded properly."
 }
 
-# Test the functions if environment config is available
+# Test configuration availability if environment config exists
 if (Test-Path $envConfigPath) {
-    # Load environment config
-    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
-    $KeyVaultName = $envConfig.keyVaultName
-    $TenantId = $envConfig.tenantId
-    $SubscriptionId = $envConfig.subscriptionId
-    
-    Write-Host "Using Key Vault: $KeyVaultName`nUsing Tenant ID: $TenantId`nUsing Subscription ID: $SubscriptionId`n`nTesting Connect-12Azure function..." -ForegroundColor Cyan
-    
-    # Skip the interactive login part in test mode
-    Write-Host "INFO: Skipping interactive Azure connection test to avoid login prompt." -ForegroundColor Yellow
-    Write-Host "Connection test skipped." -ForegroundColor Yellow
-    
-    <# Comment out the actual connection test to avoid interactive prompts
-    $connected = Connect-12Azure -TenantId $TenantId -SubscriptionId $SubscriptionId
-    if ($connected) {
-        Write-Host "Connection successful!" -ForegroundColor Green
-    } else {
-        Write-Host "Connection failed!" -ForegroundColor Red
-    }
-    #>
-    
-    # Skip Get-PATFromKeyVault test which would also trigger authentication
-    Write-Host "`nINFO: Skipping Get-PATFromKeyVault test to avoid login prompt." -ForegroundColor Yellow
-    
-    <# Comment out the actual KeyVault test to avoid interactive prompts
-    # Test Get-PATFromKeyVault function
-    Write-Host "`nTesting Get-PATFromKeyVault function..." -ForegroundColor Cyan
     try {
-        $SecretName = "PAT"
-        $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
-        
-        if ($PersonalAccessToken) {
-            $maskedValue = $PersonalAccessToken.Substring(0, [Math]::Min(4, $PersonalAccessToken.Length)) + "..."
-            Write-Host "PAT retrieved successfully! Value (masked): $maskedValue" -ForegroundColor Green
-            Write-Host "PAT length: $($PersonalAccessToken.Length) characters" -ForegroundColor Green
-        }
+        # Load environment config
+        $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
+        $KeyVaultName = $envConfig.keyVaultName
+        $TenantId = $envConfig.tenantId
+        $SubscriptionId = $envConfig.subscriptionId
+
+        # Assert config values
+        if ([string]::IsNullOrEmpty($KeyVaultName)) { throw "KeyVaultName missing in environment config." }
+        if ([string]::IsNullOrEmpty($TenantId)) { throw "TenantId missing in environment config." }
+        if ([string]::IsNullOrEmpty($SubscriptionId)) { throw "SubscriptionId missing in environment config." }
+
+        Write-Host "`n✓ Environment configuration loaded:" -ForegroundColor Green
+        Write-Host "  - Key Vault: $KeyVaultName" -ForegroundColor White
+        Write-Host "  - Tenant ID: $TenantId" -ForegroundColor White
+        Write-Host "  - Subscription ID: $SubscriptionId" -ForegroundColor White
+
+        # Note: Skipping interactive Azure connection test to avoid login prompt in integration test
+        Write-Host "`nℹ Skipping interactive Azure connection test to avoid login prompt" -ForegroundColor Yellow
+        Write-Host "  (Integration tests with real Azure connectivity should be run manually)" -ForegroundColor Yellow
+
+    } catch {
+        Write-Host "! Failed to load environment config: $($_.Exception.Message)" -ForegroundColor Yellow
+        throw "Failed to load environment config."
     }
-    catch {
-        Write-Host "Error testing Get-PATFromKeyVault: $($_.Exception.Message)" -ForegroundColor Red
-    }
-    #>
 } else {
-    Write-Host "`nCould not find environment config at $envConfigPath. Skipping function test." -ForegroundColor Yellow
+    Write-Host "`n! Environment config not found at $envConfigPath" -ForegroundColor Yellow
+    Write-Host "  Configuration file is needed for full integration testing" -ForegroundColor Yellow
 }
 
-Write-Host "`nTest completed!" -ForegroundColor Green
+Write-Host "`n✓ OrchestratorCommon module integration test completed successfully" -ForegroundColor Green

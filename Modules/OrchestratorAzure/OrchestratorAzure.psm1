@@ -1,12 +1,19 @@
 # OrchestratorAzure.psm1
 # Module for Azure-related functions used across OrchestratorPsh scripts
 
+# Import Packaging module for Ensure-NuGetProvider dependency
+$packagingModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Packaging\Packaging.psd1'
+Import-Module $packagingModulePath -Force
+
 # Function to connect to Azure with the specified tenant and subscription
 function Connect-12Azure {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $false)]
-        [switch]$ForceNewLogin
+        [switch]$ForceNewLogin,
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$SkipSubscriptionCheck
     )
     
     try {
@@ -22,7 +29,10 @@ function Connect-12Azure {
         $context = Get-AzContext
         $needsLogin = $ForceNewLogin -or (-not $context) -or 
                       ($context.Tenant.Id -ne $TenantId) -or 
-                      ($context.Subscription.Id -ne $SubscriptionId)
+                      (
+                        -not $SkipSubscriptionCheck -and 
+                        ($context.Subscription.Id -ne $SubscriptionId)
+                      )
 
         if ($needsLogin) {
             Write-Host "Connecting to Azure with Tenant ID: $TenantId and Subscription ID: $SubscriptionId" -ForegroundColor Cyan
@@ -61,7 +71,30 @@ function Connect-12AzureWithCertificate {
 
         Write-Host "Connecting to Azure using certificate authentication..." -ForegroundColor Cyan
 
-        $connection = Connect-AzAccount -ServicePrincipal -CertificateThumbprint $12cConfig.certThumbprint -ApplicationId $12cConfig.AppId -TenantId $12cConfig.tenantId
+        # Check if Az module is available, install if needed
+        if (-not (Get-Module -ListAvailable -Name Az.Accounts)) {
+            Write-Host "Az.Accounts module is not available. Installing..." -ForegroundColor Yellow
+            try {
+                # Ensure NuGet provider is available first
+                Ensure-NuGetProvider
+                Install-Module -Name Az.Accounts -Force -Scope CurrentUser -AllowClobber -Repository PSGallery
+                Write-Host "Az.Accounts module installed successfully." -ForegroundColor Green
+            } catch {
+                throw "Failed to install Az.Accounts module: $($_.Exception.Message)"
+            }
+        }
+
+        # Import Az.Accounts if not already loaded
+        if (-not (Get-Module -Name Az.Accounts)) {
+            try {
+                Import-Module Az.Accounts -Force
+                Write-Host "Az.Accounts module imported successfully." -ForegroundColor Green
+            } catch {
+                throw "Failed to import Az.Accounts module: $($_.Exception.Message)"
+            }
+        }
+
+        $connection = Connect-AzAccount -ServicePrincipal -CertificateThumbprint $CertificateThumbprint -ApplicationId $ApplicationId -TenantId $TenantId
 
         Write-Host "Successfully connected to Azure using certificate authentication." -ForegroundColor Green
         return $connection
@@ -71,21 +104,46 @@ function Connect-12AzureWithCertificate {
     }
 }
 
-# Function to retrieve the Personal Access Token (PAT) from Azure Key Vault
-function Get-PATFromKeyVault {
+# Function to retrieve secrets from Azure Key Vault using global configuration
+function Get-12cKeyVaultSecret {
+    [CmdletBinding()]
     param (
-        [string]$KeyVaultName,
-        [string]$SecretName,
-        [string]$TenantId,
-        [string]$SubscriptionId,
-        [switch]$ForceNewLogin
+        [Parameter(Mandatory = $true)]
+        [string]$SecretName
     )
 
     try {
-        # Connect to Azure using the extracted connection function
-        $connected = Connect-12Azure -ForceNewLogin:$ForceNewLogin
-        if (-not $connected) {
-            throw "Failed to connect to Azure"
+        if (-not $global:12cConfig) {
+            throw "Global configuration variable '12cConfig' is not set. Please initialize it first."
+        }
+
+        $KeyVaultName = $global:12cConfig.keyVaultName
+        if ([string]::IsNullOrWhiteSpace($KeyVaultName)) {
+            throw "KeyVaultName is not configured in global configuration."
+        }
+
+        # Ensure we have the necessary Az modules
+        $requiredModules = @('Az.Accounts', 'Az.KeyVault')
+        foreach ($moduleName in $requiredModules) {
+            if (-not (Get-Module -ListAvailable -Name $moduleName)) {
+                Write-Host "Installing $moduleName module..." -ForegroundColor Yellow
+                try {
+                    # Ensure NuGet provider is available first
+                    Ensure-NuGetProvider
+                    Install-Module -Name $moduleName -Force -Scope CurrentUser -AllowClobber -Repository PSGallery
+                    Write-Host "$moduleName module installed successfully." -ForegroundColor Green
+                } catch {
+                    throw "Failed to install $moduleName module: $($_.Exception.Message)"
+                }
+            }
+            if (-not (Get-Module -Name $moduleName)) {
+                try {
+                    Import-Module $moduleName -Force
+                    Write-Host "$moduleName module imported successfully." -ForegroundColor Green
+                } catch {
+                    throw "Failed to import $moduleName module: $($_.Exception.Message)"
+                }
+            }
         }
 
         # Retrieve the secret from Azure Key Vault
@@ -112,14 +170,15 @@ function Get-PATFromKeyVault {
         }
         
         # Validate the extracted secret
-        if ([string]::IsNullOrEmpty($secretValueText)) {
-            Write-Warning "Retrieved PAT is null or empty. Please check the Key Vault secret."
+        if ([string]::IsNullOrWhiteSpace($secretValueText)) {
+            throw "Retrieved secret is null or empty."
         }
-        
+
+        Write-Host "Secret '$SecretName' retrieved successfully from Key Vault." -ForegroundColor Green
         return $secretValueText
-    }
-    catch {
-        Write-Error "Error in Get-PATFromKeyVault: $($_.Exception.Message)"
+        
+    } catch {
+        Write-Error "Error retrieving secret '$SecretName' from Key Vault: $($_.Exception.Message)"
         throw
     }
 }
@@ -213,4 +272,4 @@ function Set-12cKeyVaultSecret {
 }
 
 # Export the functions
-Export-ModuleMember -Function Get-PATFromKeyVault, Connect-12Azure, Get-ServicePrincipalObjectId, Connect-12AzureWithCertificate, Set-12cKeyVaultSecret
+Export-ModuleMember -Function Get-12cKeyVaultSecret, Connect-12Azure, Get-ServicePrincipalObjectId, Connect-12AzureWithCertificate, Set-12cKeyVaultSecret

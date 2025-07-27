@@ -12,7 +12,7 @@
 RootModule = 'CommonConnectionsPackage.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.7'
+ModuleVersion = '1.0.22'
 
 # ID used to uniquely identify this module
 GUID = '9bb742e3-1a42-5690-8972-ef2d78a503b3'
@@ -48,6 +48,21 @@ VariablesToExport = '*'
 AliasesToExport = @()
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

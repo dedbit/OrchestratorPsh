@@ -21,6 +21,67 @@ if (-not (Get-Module -ListAvailable Az)) {
 }
 ```
 
+## Troubleshooting
+
+### Update-12cModules.ps1 Issues
+
+If you encounter "Unable to resolve package source" errors when running Update-12cModules.ps1 on a new machine, the script now includes automatic fixes for common portability issues:
+
+**Automatic Fixes Included:**
+- NuGet PackageProvider installation and updates
+- PowerShell Gallery trust configuration
+- Network connectivity testing to artifact feeds
+- Proper credential handling for private repositories
+- Enhanced error messages with troubleshooting guidance
+
+**Manual Troubleshooting Steps:**
+1. **Run as Administrator** - The script requires admin privileges for installing modules with `-Scope AllUsers`
+2. **Check Network Connectivity** - Ensure the machine can reach `https://pkgs.dev.azure.com`
+3. **Verify Azure Authentication** - Make sure the certificate is properly installed and Azure connection works
+4. **Test Repository Access** - Try running: `Find-Module -Repository 'OrchestratorPshRepo22'`
+5. **Check Event Logs** - Look for PowerShell and NuGet related errors in Windows Event Viewer
+
+**For Testing Fixes:**
+```powershell
+# Run the test script to verify all components
+.\CoreUpdaterPackage\test-module-update-fixes.ps1
+```
+
+## Scheduled Task Setup
+
+The CoreUpdaterPackage includes scripts for automated execution via Windows Task Scheduler:
+
+### Files Created
+- `CoreUpdaterPackage\ScheduledTask\Update-12cModules.bat` - Batch script that executes Update-12cModules.ps1
+- `CoreUpdaterPackage\ScheduledTask\Install-ScheduledTask.ps1` - PowerShell script to create scheduled task
+
+### Installation
+Run as Administrator:
+```powershell
+# Navigate to ScheduledTask directory
+cd CoreUpdaterPackage\ScheduledTask
+
+# Install the scheduled task (runs daily at 3:00 AM by default)
+.\Install-ScheduledTask.ps1
+
+# Optional: Customize schedule
+.\Install-ScheduledTask.ps1 -TaskName "CustomUpdater" -TriggerType "Weekly" -TriggerTime "02:00"
+```
+
+### Management
+```powershell
+# View the task (located in "12c" folder in Task Scheduler)
+Get-ScheduledTask -TaskName "Update-12cModules-Task" -TaskPath "\12c\"
+
+# Run immediately for testing
+Start-ScheduledTask -TaskName "Update-12cModules-Task" -TaskPath "\12c\"
+
+# Remove the task
+Unregister-ScheduledTask -TaskName "Update-12cModules-Task" -TaskPath "\12c\" -Confirm:$false
+```
+
+The scheduled task runs with SYSTEM account and highest privileges to ensure administrator access for module installation.
+
 ## Todo
 
 Setup modules/configuration module same as messaging. 
@@ -40,8 +101,9 @@ Setup modules/configuration module same as messaging.
 6. **Develop Publish Script**
     - Push `.nupkg` to Azure DevOps Artifacts using the PAT.
 
-7. **Schedule Execution**
+7. **Schedule Execution** ✓
     - Set up a Windows Task Scheduler or automation tool to run the updater regularly.
+    - **Completed**: Created `Update-12cModules.bat` and `Install-ScheduledTask.ps1` for automated execution.
 
 8. **Configure Local Module Installation Path**
     - Ensure consistent install location for updated modules.
@@ -81,3 +143,27 @@ Setup modules/configuration module same as messaging.
     - Implemented comprehensive test suite for module validation
     - Added Architecture.md with module design and usage documentation
     - Done.
+
+
+## Module Dependency Overview
+
+```mermaid
+graph TD
+    Worker --> OrchestratorRouting
+    OrchestratorRouting --> CosmosDBPackage
+    OrchestratorCommon --> OrchestratorAzure
+    OrchestratorAzure --> Packaging
+    CosmosDBPackage
+    Packaging
+    CommonConnections
+    Configuration
+    MessagingModule
+```
+
+- **CommonConnections**: Standalone, provides connection config and caching.
+- **Configuration**: Standalone, handles environment/module config.
+- **Packaging**: Standalone, handles NuGet packaging and publishing.
+- **OrchestratorAzure**: Core Azure logic, used by other modules.
+- **OrchestratorCommon**: Loader, re-exports OrchestratorAzure functions.
+- **CosmosDB**: Uses OrchestratorAzure and Configuration.
+- **MessagingModule**: Uses OrchestratorAzure and Configuration.

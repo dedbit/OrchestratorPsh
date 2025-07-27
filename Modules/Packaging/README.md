@@ -65,7 +65,6 @@ winget install Microsoft.PowerShell Microsoft.DotNet.Framework.DeveloperPack_4
 - **Invoke-NuGetPack** - Builds NuGet packages using the internal nuget.exe
 - **Ensure-NuGetFeedConfigured** - Configures NuGet feeds with authentication
 - **Publish-NuGetPackageAndCleanup** - Publishes packages and cleans up feed configuration
-- **Get-NuGetPATFromKeyVault** - Retrieves Personal Access Tokens from Azure Key Vault
 - **Confirm-DirectoryExists** - Ensures required directories exist
 - **Remove-OldPackageVersions** - Maintains clean package output directories
 

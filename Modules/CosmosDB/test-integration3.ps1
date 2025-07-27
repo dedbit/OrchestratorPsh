@@ -84,6 +84,7 @@ function Set-12cItem {
 
     $conn = Get-12cCosmosConnection -DatabaseName $DatabaseName -ContainerName $ContainerName
     if (-not $Item.id) { throw "Item must have an 'id' property." }
+    if (-not $Item.partitionKey) { throw "Item must have a 'partitionKey' property." }
 
     $accountEndpoint = ($conn.ConnectionString -split 'AccountEndpoint=')[1] -split ';' | Select-Object -First 1
     $accountKey = ($conn.ConnectionString -split 'AccountKey=')[1] -split ';' | Select-Object -First 1
@@ -105,7 +106,7 @@ function Set-12cItem {
         "x-ms-date"       = $date
         "x-ms-version"    = "2018-12-31"
         "x-ms-documentdb-is-upsert" = "true"
-        "x-ms-documentdb-partitionkey" = '["' + $Item.id + '"]'
+        "x-ms-documentdb-partitionkey" = '["' + $Item.partitionKey + '"]'
         "Content-Type"    = "application/json"
     }
 
@@ -186,6 +187,7 @@ Write-Host "✓ Connected to CosmosDB: $($connection.AccountName)" -ForegroundCo
 $testId = "test-item-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 $testItem = @{
     id = $testId
+    partitionKey = $testId
     name = "Test"
     description = "Created by integration test"
     timestamp = (Get-Date).ToString("o")

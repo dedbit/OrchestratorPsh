@@ -33,7 +33,7 @@ try {
     Import-Module $azureModulePsd1
     Import-Module $packagingModulePath # Import the new Packaging module
     Initialize-12Configuration $envConfigPath # Uses $envConfigPath
-    Connect-12Azure
+    Connect-12AzureWithCertificate
 
     if (Test-Path $commonModuleRootPath) {
         Import-Module $commonModuleRootPath -Force
@@ -61,8 +61,8 @@ try {
     }
 
     # 3. Retrieve PAT from Key Vault
-    # The Get-NuGetPATFromKeyVault function now takes SecretName as a parameter
-    $pat = Get-NuGetPATFromKeyVault -SecretName $SecretName
+    # The Get-12cKeyVaultSecret function takes SecretName as a parameter
+    $pat = Get-12cKeyVaultSecret -SecretName $SecretName
 
     # 4. Ensure NuGet Feed is Configured
     # Access the ArtifactsFeedUrl from the global configuration

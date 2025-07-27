@@ -71,7 +71,7 @@ pwsh -File "$mockNugetPS1Path" `$@
 }
 
 # --- Test Publish-NuGetPackageAndCleanup ---
-Write-Host "\nTesting Publish-NuGetPackageAndCleanup..." -ForegroundColor Cyan
+Write-Host "Testing Publish-NuGetPackageAndCleanup..." -ForegroundColor Cyan
 
 $testPkg = Join-Path $tempDir "ManualTestPkg.nupkg"
 Set-Content -Path $testPkg -Value "dummy"
@@ -91,7 +91,7 @@ try {
 Remove-Item $testPkg -ErrorAction SilentlyContinue
 
 # --- Test Ensure-NuGetFeedConfigured ---
-Write-Host "\nTesting Ensure-NuGetFeedConfigured..." -ForegroundColor Cyan
+Write-Host "Testing Ensure-NuGetFeedConfigured..." -ForegroundColor Cyan
 
 # Clear previous tracking files
 Get-ChildItem -Path $testTrackingDir -Filter "*-called" | Remove-Item -Force
@@ -108,7 +108,7 @@ try {
 }
 
 # --- Test Invoke-NuGetPack ---
-Write-Host "\nTesting Invoke-NuGetPack..." -ForegroundColor Cyan
+Write-Host "Testing Invoke-NuGetPack..." -ForegroundColor Cyan
 
 $testNuspec = Join-Path $tempDir "ManualTest.nuspec"
 $testOutDir = Join-Path $tempDir "ManualTestOut"
@@ -130,7 +130,7 @@ try {
 Remove-Item $testNuspec -ErrorAction SilentlyContinue
 Remove-Item $testOutDir -Recurse -ErrorAction SilentlyContinue
 
-Write-Host "\nManual tests complete." -ForegroundColor Cyan
+Write-Host "Manual tests complete." -ForegroundColor Cyan
 
 # Clean up mock scripts and tracking
 Remove-Item $mockNugetPath -ErrorAction SilentlyContinue
@@ -138,7 +138,7 @@ Remove-Item $mockNugetPS1Path -ErrorAction SilentlyContinue
 Remove-Item $testTrackingDir -Recurse -ErrorAction SilentlyContinue
 
 # --- Test Get-PackageVersionFromNuspec ---
-Write-Host "\nTesting Get-PackageVersionFromNuspec..." -ForegroundColor Cyan
+Write-Host "Testing Get-PackageVersionFromNuspec..." -ForegroundColor Cyan
 $testNuspec = Join-Path $tempDir "ManualTestVer.nuspec"
 Set-Content -Path $testNuspec -Value "<package><metadata><id>t</id><version>2.3.4</version><authors>a</authors><description>d</description></metadata></package>"
 $version = $null
@@ -153,7 +153,7 @@ try {
 Remove-Item $testNuspec -ErrorAction SilentlyContinue
 
 # --- Test Confirm-DirectoryExists ---
-Write-Host "\nTesting Confirm-DirectoryExists..." -ForegroundColor Cyan
+Write-Host "Testing Confirm-DirectoryExists..." -ForegroundColor Cyan
 $testDir = Join-Path $tempDir "ManualTestDir"
 if (Test-Path $testDir) { Remove-Item $testDir -Recurse -Force }
 try {
@@ -167,7 +167,7 @@ try {
 Remove-Item $testDir -Recurse -ErrorAction SilentlyContinue
 
 # --- Test Set-PackageVersionIncrement ---
-Write-Host "\nTesting Set-PackageVersionIncrement..." -ForegroundColor Cyan
+Write-Host "Testing Set-PackageVersionIncrement..." -ForegroundColor Cyan
 $testNuspec = Join-Path $tempDir "ManualTestInc.nuspec"
 Set-Content -Path $testNuspec -Value "<package><metadata><id>t</id><version>1.2.3</version><authors>a</authors><description>d</description></metadata></package>"
 $newVer = $null
@@ -182,7 +182,7 @@ try {
 Remove-Item $testNuspec -ErrorAction SilentlyContinue
 
 # --- Test Remove-OldPackageVersions ---
-Write-Host "\nTesting Remove-OldPackageVersions..." -ForegroundColor Cyan
+Write-Host "Testing Remove-OldPackageVersions..." -ForegroundColor Cyan
 $testOutDir = Join-Path $tempDir "ManualTestOldPkg"
 if (Test-Path $testOutDir) { Remove-Item $testOutDir -Recurse -Force }
 New-Item -ItemType Directory -Path $testOutDir | Out-Null

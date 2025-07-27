@@ -1,0 +1,26 @@
+{
+  "stage1": {
+    "DefaultNextStage": "stage2",
+    "DefaultFailStage": "failed_stage",
+    "Retry": 3
+  },
+  "stage2": {
+    "DefaultNextStage": "stage3",
+    "DefaultFailStage": "failed_stage",
+    "Retry": 2
+  },
+  "stage3": {
+    "DefaultNextStage": "completed_stage",
+    "Retry": 1
+  },
+  "failed_stage": {
+    "DefaultNextStage": "manual_review"
+  },
+  "completed_stage": {
+    "DefaultNextStage": "archived"
+  },
+  "manual_review": {
+    "DefaultNextStage": "stage1",
+    "Retry": 1
+  }
+}

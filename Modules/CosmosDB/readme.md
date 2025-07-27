@@ -32,7 +32,7 @@ Initialize-12Configuration
 
 # Use CosmosDB functions
 $item = Get-12cItem -Id "item123"
-Set-12cItem -Item @{ id = "item123"; name = "Test Item"; value = 42 }
+Set-12cItem -Item @{ id = "item123"; partitionKey = "item123"; name = "Test Item"; value = 42 }
 ```
 
 ## Configuration Files
@@ -58,6 +58,6 @@ Set-12cItem -Item @{ id = "item123"; name = "Test Item"; value = 42 }
 
 - **Get-12cCosmosConnection** - Retrieves CosmosDB connection details from Azure Key Vault
 - **Get-12cItem** - Gets an item from CosmosDB by ID with optional partition key
-- **Set-12cItem** - Sets/upserts an item in CosmosDB with automatic JSON conversion
+- **Set-12cItem** - Sets/upserts an item in CosmosDB with automatic JSON conversion (requires both id and partitionKey properties)
 
 For detailed architecture information, see [Architecture.md](Architecture.md).

@@ -33,6 +33,8 @@ Connect-12Azure
 
 # Test connection
 $connection = Get-12cCosmosConnection -DatabaseName "OrchestratorDb" -ContainerName "Items"
+Assert-ObjectNotNull $connection "CosmosDB Connection"
+Assert-StringNotEmpty $connection.AccountName "CosmosDB AccountName"
 Write-Host "✓ Connected to CosmosDB: $($connection.AccountName)" -ForegroundColor Green
 
 # Create test item
@@ -45,15 +47,23 @@ $testItem = @{
 }
 
 $result = Set-12cItem -Item $testItem -DatabaseName "OrchestratorDb" -ContainerName "Items"
+$result = Set-12cItem -Item $testItem -DatabaseName "OrchestratorDb" -ContainerName "Items"
+Assert-ObjectNotNull $result "Set-12cItem result"
+Assert-StringNotEmpty $result.id "Upserted Item Id"
 Write-Host "✓ Item upserted: $testId" -ForegroundColor Green
 
 # Retrieve test item
 $retrieved = Get-12cItem -Id $testId -DatabaseName "OrchestratorDb" -ContainerName "Items"
+$retrieved = Get-12cItem -Id $testId -DatabaseName "OrchestratorDb" -ContainerName "Items"
+Assert-ObjectNotNull $retrieved "Retrieved Item"
+Assert-StringNotEmpty $retrieved.id "Retrieved Item Id"
+Assert-StringNotEmpty $retrieved.name "Retrieved Item Name"
 Write-Host "✓ Item retrieved: $($retrieved.id) - $($retrieved.name)" -ForegroundColor Green
 
 # Clean up the test item
 try {
-    Remove-12cItem -Id $testId -DatabaseName "OrchestratorDb" -ContainerName "Items"
+    $removeResult = Remove-12cItem -Id $testId -DatabaseName "OrchestratorDb" -ContainerName "Items"
+    Assert-ObjectNotNull $removeResult "Remove-12cItem result"
     Write-Host "✓ Test item cleaned up: $testId" -ForegroundColor Green
 } catch {
     Write-Host "⚠ Failed to clean up test item: $($_.Exception.Message)" -ForegroundColor Yellow

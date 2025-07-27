@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>OrchestratorRouting</id> <!-- IMPORTANT: Must match PSD1 and module name -->
+    <version>1.0.8</version>
+    <authors>OrchestratorPsh Team</authors>
+    <owners>12C</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Orchestrator Routing module for item processing with progress and retry handling</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>Copyright © 2025 12C</copyright>
+    <tags>Orchestrator Routing Package OrchestratorPsh</tags>
+  </metadata>
+  <files>
+    <file src="OrchestratorRouting\**" target="" />
+  </files>
+</package>
+
+
+
+
+
+
+
+
+
+
+

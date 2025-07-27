@@ -6,7 +6,7 @@
     RootModule = 'CosmosDBPackage.psm1'
 
     # Version number of this module
-    ModuleVersion = '1.0.7'
+    ModuleVersion = '1.0.15'
 
     # ID used to uniquely identify this module
     GUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
@@ -30,7 +30,7 @@
     RequiredModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = @('Get-12cItem', 'Set-12cItem', 'Get-12cCosmosConnection','Remove-12cItem')
+    FunctionsToExport = @('Get-12cItem', 'Set-12cItem', 'Get-12cCosmosConnection','Remove-12cItem', 'Invoke-12cCosmosDbSqlQuery')
 
     # Cmdlets to export from this module
     CmdletsToExport = @()
@@ -58,6 +58,14 @@
         }
     }
 }
+
+
+
+
+
+
+
+
 
 
 

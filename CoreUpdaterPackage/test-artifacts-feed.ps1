@@ -1,9 +1,11 @@
 # Script to test getting PAT from Key Vault and listing packages from Azure DevOps artifacts feed
 
 # Define paths at top of script
-$configModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1'
-$orchestratorAzureModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Modules\OrchestratorAzure\OrchestratorAzure.psd1'
-$envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\environments\dev.json'
+$ScriptRoot = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '.'
+
+$configModulePath = Join-Path $ScriptRoot '..\Modules\Configuration\ConfigurationPackage\ConfigurationPackage.psd1'
+$orchestratorAzureModulePath = Join-Path $ScriptRoot '..\Modules\OrchestratorAzure\OrchestratorAzure.psd1'
+$envConfigPath = Join-Path $ScriptRoot '..\environments\dev.json'
 
 # Import the Az module to interact with Azure services
 # Import-Module Az
@@ -11,10 +13,8 @@ $envConfigPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path)
 Import-Module $configModulePath
 Import-Module $orchestratorAzureModulePath
 Initialize-12Configuration $envConfigPath
-Connect-12Azure
+Connect-12AzureWithCertificate
 
-# Determine script root in both script and console contexts
-$ScriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
 
 # Define Get-ScriptRoot function in case functions.ps1 import fails
 function Get-ScriptRoot {
@@ -24,7 +24,7 @@ function Get-ScriptRoot {
 
 # Try to load shared functions
 try {
-    . "$ScriptRoot\functions.ps1"
+    . "$ScriptRoot\Functions\functions.ps1"
     Write-Host "Functions loaded successfully." -ForegroundColor Green
 } 
 catch {
@@ -32,7 +32,8 @@ catch {
 }
 
 # Import OrchestratorCommon module
-$moduleRoot = Join-Path -Path $ScriptRoot -ChildPath "..\Modules\OrchestratorCommon"
+$moduleRoot = Join-Path $ScriptRoot '..\..\Modules\OrchestratorCommon'
+Write-Host "Resolved OrchestratorCommon module path: $moduleRoot" -ForegroundColor Yellow
 if (Test-Path $moduleRoot) {
     Import-Module $moduleRoot -Force
     Write-Host "OrchestratorCommon module imported successfully." -ForegroundColor Green
@@ -42,7 +43,7 @@ if (Test-Path $moduleRoot) {
 }
 
 # Define variables
-$envConfigPath = Join-Path -Path $ScriptRoot -ChildPath "..\environments\dev.json"
+$envConfigPath = Join-Path $ScriptRoot '..\..\environments\dev.json'
 if (Test-Path $envConfigPath) {    $envConfig = Get-Content -Path $envConfigPath -Raw | ConvertFrom-Json
     $KeyVaultName = $envConfig.keyVaultName
     $TenantId = $envConfig.tenantId
@@ -62,7 +63,7 @@ $SecretName = "PAT"   # Name of the secret storing the PAT
 # Retrieve the PAT securely
 try {
     Write-Host "Retrieving PAT from Key Vault..." -ForegroundColor Yellow
-    $PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
+    $PersonalAccessToken = Get-12cKeyVaultSecret -SecretName $SecretName
     Write-Host "PAT retrieved successfully!" -ForegroundColor Green
 } catch {
     Write-Error "Failed to retrieve PAT: $($_.Exception.Message)"
@@ -70,7 +71,7 @@ try {
 }
 
 # Check if nuget.exe exists
-$nugetPath = Join-Path -Path $ScriptRoot -ChildPath "..\Tools\nuget.exe"
+$nugetPath = Join-Path $ScriptRoot '..\..\Tools\nuget.exe'
 if (-not (Test-Path $nugetPath)) {
     Write-Error "nuget.exe not found at $nugetPath. Please make sure it exists."
     exit 1

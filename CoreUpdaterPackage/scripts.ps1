@@ -11,7 +11,7 @@ Initialize-12Configuration $envConfigPath
 Connect-12Azure
 
 
-$PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $12cConfig.keyVaultName -SecretName "PAT" -TenantId $12cConfig.tenantId -SubscriptionId $12cConfig.subscriptionId
+$PersonalAccessToken = Get-12cKeyVaultSecret -SecretName "PAT"
 $ArtifactsFeedUrl = $12cConfig.artifactsFeedUrl
 # $PersonalAccessToken = $PersonalAccessToken
 $SecurePAT = ConvertTo-SecureString $PersonalAccessToken -AsPlainText -Force

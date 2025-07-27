@@ -1,0 +1,8 @@
+{
+    "tenantId": "6df08080-a31a-4efa-8c05-2373fc4515fc",
+    "subscriptionId": "d3e92861-7740-4f9f-8cd2-bdfe8dd4bde3",
+    "keyVaultName": "orchestratorpsh-dev-kv",
+    "appId": "e7bb5312-8ca0-423b-8889-4b53b3f86355",
+    "certThumbprint": "31495428b50363f2392b65d554a38a7dcfe77141",
+    "artifactsFeedUrlV2": "https://pkgs.dev.azure.com/12c/Testprojects/_packaging/OrchestratorPsh/nuget/v2"
+}

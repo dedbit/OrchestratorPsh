@@ -23,7 +23,7 @@ try {
     Import-Module $azureModulePsd1
     Import-Module $packagingModulePath # Import the Packaging module
     Initialize-12Configuration $envConfigPath
-    Connect-12Azure
+    Connect-12AzureWithCertificate
 
     if (Test-Path $commonModuleRootPath) {
         Import-Module $commonModuleRootPath -Force
@@ -51,7 +51,7 @@ try {
     }
 
     # 3. Retrieve PAT from Key Vault
-    $pat = Get-NuGetPATFromKeyVault -SecretName $SecretName
+    $pat = Get-12cKeyVaultSecret -SecretName $SecretName
 
     # 4. Ensure NuGet Feed is Configured
     $artifactsFeedUrl = $Global:12cConfig.artifactsFeedUrl
@@ -59,9 +59,6 @@ try {
         Write-Error "ArtifactsFeedUrl could not be retrieved from the global configuration. Ensure Initialize-12Configuration has run successfully."
         throw "Missing ArtifactsFeedUrl from global scope."
     }
-    # Remove existing NuGet source if present to avoid add error
-    $nugetExePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Packaging\nuget.exe'
-    & $nugetExePath sources remove -Name $ArtifactsFeedName -NonInteractive | Out-Null
     Ensure-NuGetFeedConfigured -FeedName $ArtifactsFeedName -FeedUrl $artifactsFeedUrl -PAT $pat
 
     # 5. Publish Package and Cleanup

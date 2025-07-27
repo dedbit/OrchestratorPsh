@@ -1,5 +1,5 @@
 # test-keyvault-fixed.ps1
-# Script to test the Get-PATFromKeyVault function
+# Script to test the Get-12cKeyVaultSecret function
 
 # Define paths at top of script
 $configModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\Configuration\ConfigurationPackage\ConfigurationPackage.psd1'
@@ -13,7 +13,7 @@ $orchestratorCommonModulePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-
 Import-Module $configModulePath
 Import-Module $orchestratorAzureModulePath
 Initialize-12Configuration $envConfigPath
-Connect-12Azure
+Connect-12AzureWithCertificate
 
 # Import OrchestratorCommon module
 if (Test-Path $orchestratorCommonModulePath) {
@@ -44,7 +44,7 @@ if (Test-Path $envConfigPath) {
 Write-Host "`n========== TEST 1: Using existing context ==========`n" -ForegroundColor Magenta
 Write-Host "Testing PAT retrieval from Key Vault..." -ForegroundColor Cyan
 $SecretName = "PAT"
-$PersonalAccessToken = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId
+$PersonalAccessToken = Get-12cKeyVaultSecret -SecretName $SecretName
 
 if ($PersonalAccessToken) {
     $maskedValue = $PersonalAccessToken.Substring(0, [Math]::Min(4, $PersonalAccessToken.Length)) + "..."
@@ -55,6 +55,6 @@ if ($PersonalAccessToken) {
 
 # Test Force Login (only uncomment if you want to test the forced login functionality)
 # Write-Host "`n========== TEST 2: Forcing new login ==========`n" -ForegroundColor Magenta
-# $PersonalAccessToken2 = Get-PATFromKeyVault -KeyVaultName $KeyVaultName -SecretName $SecretName -TenantId $TenantId -SubscriptionId $SubscriptionId -ForceNewLogin
+# $PersonalAccessToken2 = Get-12cKeyVaultSecret -SecretName $SecretName
 
 Write-Host "`nTest script completed!" -ForegroundColor Green

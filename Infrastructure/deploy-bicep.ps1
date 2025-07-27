@@ -59,7 +59,7 @@ function Ensure-KeyVaultSecret {
 
 # Define paths at top of script
 $scriptRoot = $PSScriptRoot ? $PSScriptRoot : (Get-Location).Path
-$functionsPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\CoreUpdaterPackage\functions.ps1'
+$functionsPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) '..\CoreUpdaterPackage\Functions\functions.ps1'
 $syncParametersPath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'sync-parameters.ps1'
 $parameterFilePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'main.parameters.json'
 $templateFilePath = Join-Path ($PSScriptRoot ? $PSScriptRoot : (Get-Location).Path) 'main.bicep'

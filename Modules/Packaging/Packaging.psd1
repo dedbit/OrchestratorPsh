@@ -3,7 +3,7 @@
     RootModule = 'Packaging.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.0.15'
+    ModuleVersion = '1.0.27'
 
     # ID used to uniquely identify this module
     GUID = '42f80e65-ae99-424e-9d8b-aa9a7d25df39' # Replaced New-Guid with a static GUID
@@ -59,7 +59,6 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
         'Get-PackageVersionFromNuspec',
-        'Get-NuGetPATFromKeyVault',
         'Publish-NuGetPackageAndCleanup',
         'Ensure-NuGetFeedConfigured',
         'Confirm-DirectoryExists',        # Added
@@ -110,6 +109,18 @@
     # Default prefix for commands exported from this module. Override a command prefix using the Export-ModuleMember cmdlet. Default is to export all commands with no prefix.
     # DefaultCommandPrefix = ''
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
